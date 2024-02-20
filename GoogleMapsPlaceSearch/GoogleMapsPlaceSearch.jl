@@ -1,8 +1,7 @@
-module PlaceDetailsSearch
-using Base: length_continued
+module GoogleMapsPlaceSearch
 include("placeTypes.jl")
 
-export placedetails, GoogleAPI, SearchPoint
+export GoogleAPI
 
 import HTTP, JSON, DataFrames, Missings, GeoIO, Meshes, Base.Threads
 
@@ -12,55 +11,28 @@ import HTTP, JSON, DataFrames, Missings, GeoIO, Meshes, Base.Threads
 end
 
 function _createsearchpoints(area::Meshes.MultiPolygon,
-    api_limit::Integer=4000)::Vector{Meshes.Point2}
+    api_limit::Integer)::Vector{Meshes.Point2}
 
-    sample_rate::Float64 = 0.0003
+    sample_rate::Float64 = 0.1
     points::Vector{Any} = zeros(api_limit + 1)
 
+    sampler::Meshes.HomogeneousSampling = Meshes.HomogeneousSampling(api_limit)
+    points = Meshes.sample(area, sampler) |> collect
 
-    while length(points) > api_limit
-        if length(points) == api_limit + 1
-            println("Building search grid...")
-        else
-            println("Search grid has $(length(points)) points. Building with smaller sample rate.")
-        end
-
-        sampler::Meshes.MinDistanceSampling = Meshes.MinDistanceSampling(sample_rate)
-        points = Meshes.sample(area, sampler) |> collect
-        sample_rate += 0.0001
-    end
-
-    println("Search grid has $(length(points)) points.")
     return points
 end
 
 function placedetails(api::GoogleAPI,
-    area::Meshes.MultiPolygon,
-    api_limit::Integer=nothing)::DataFrames.DataFrame
+    area::Meshes.MultiPolygon, api_limit::Integer=4000)
 
-    search_grid_points::Vector{Meshes.Point2} = []
-    if api_limit == nothing
-        search_grid_points = _createsearchpoints(area)
-    else
-        search_grid_points = _createsearchpoints(area, api_limit)
-    end
+    search_grid_points::Vector{Meshes.Point2} = _createsearchpoints(area, api_limit)
 
-
-    place_ids::Vector{Dict{String,Any}} = []
     println("Running nearby search for each grid point.")
     for search_point in search_grid_points
         for i in _nearbysearch(api=api, search_point=search_point)
-            push!(place_ids, i)
+            _saveplacefile(i, "data/")
         end
     end
-
-    flat_places::Vector{Any} = []
-    println("Extracting data.")
-    for place in place_ids
-        push!(flat_places, _flattenplace(place))
-    end
-
-    return DataFrames.DataFrame(flat_places)
 
 end
 
@@ -103,14 +75,25 @@ function _nearbysearch(; api::GoogleAPI, search_point::Meshes.Point)::Vector{Any
     end
 end
 
-# modfiy place dictionary into single level
-function _flattenplace(rawplace::Dict{String,Any})::Dict{String,Any}
+function _saveplacefile(place::Dict{String,Any}, path::String)
+    filename::String = path * place["id"] * ".json"
+    open(filename, "w") do f
+        JSON.print(f, place)
+    end
+end
+
+function flattenplace(rawplace::Dict{String,Any})::Dict{String,Any}
     if length(rawplace) > 0
         place::Dict{String,Any} = Dict{String,Any}()
         place["place_id"] = rawplace["id"]
         place["lat"] = rawplace["location"]["latitude"]
         place["lon"] = rawplace["location"]["longitude"]
-        typesdict::Dict{String,Bool} = _extracttypes(place_types=rawplace["types"])
+        if haskey(rawplace, "primaryType") && haskey(alltypes, rawplace["primaryType"])
+            place["primaryA"] = alltypes[rawplace["primaryType"]]
+        else
+            place["primaryA"] = nothing
+        end
+        typesdict::Dict{String,Bool} = extracttypes(place_types=rawplace["types"])
         place = merge(place, typesdict)
 
         return place
@@ -120,17 +103,35 @@ function _flattenplace(rawplace::Dict{String,Any})::Dict{String,Any}
 
 end
 
-# separate place types into boolean indicators
-function _extracttypes(; place_types::Vector{Any})::Dict{String,Bool}
+function extracttypes(; place_types::Vector{Any})::Dict{String,Bool}
 
-    output::Dict{String,Any} = Dict{String,Any}()
-    for type in all_types
+
+    output::Dict{String,Int64} = Dict(
+        "automotive" => false,
+        "business" => false,
+        "culture" => false,
+        "education" => false,
+        "recreation" => false,
+        "finance" => false,
+        "foodbev" => false,
+        "geographic" => false,
+        "government" => false,
+        "health" => false,
+        "lodging" => false,
+        "worship" => false,
+        "services" => false,
+        "shopping" => false,
+        "sports" => false,
+        "transportation" => false,
+        "typeb" => false
+    )
+
+    for type in typeslist
+        type_cat::String = alltypes[type]
         if type in place_types
-            output[type] = true
-        else
-            output[type] = false
+            # output[type] = 1
+            output[type_cat] = true
         end
-
     end
 
     return output

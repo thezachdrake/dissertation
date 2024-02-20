@@ -1,6 +1,7 @@
-include("PlaceDetailsSearch.jl")
-using .PlaceDetailsSearch
+include("GoogleMapsPlaceSearch/GoogleMapsPlaceSearch.jl")
+using .GoogleMapsPlaceSearch
 import GeoIO
+import Meshes
 import HTTP as HTTP
 
 google_api::GoogleAPI = GoogleAPI(
@@ -11,12 +12,9 @@ google_api::GoogleAPI = GoogleAPI(
 response::HTTP.Response = HTTP.get("https://data.cityofnewyork.us/resource/7t3b-ywvw.geojson",
     query=[
         "\$\$app_token" => "PoXtpm9UpT6UnvUOK8F0lp3Sp",
-        # "\$query" => query_statement
     ]
 )
 
-test = GeoIO.load(String(response.body))
+manhattan::Meshes.MultiPolygon = GeoIO.load(String(response.body))[2, :geometry]
 
-
-placedetails(google_api, test[2, :geometry], 100)
-
+GoogleMapsPlaceSearch.placedetails(google_api, manhattan, 100)
