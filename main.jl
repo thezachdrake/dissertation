@@ -1,29 +1,32 @@
 using GeoStats
-using JSON
+import JSON: parsefile
 import GeoIO: load
-import Base.Threads
-using Match
 import CairoMakie as Mke
+import Base.Threads: @threads
+using BenchmarkTools
 # include("GoogleMapsPlaceSearch.jl")
 # using .GoogleMapsPlaceSearch
 include("cleaning_tools.jl")
 
 ### load and clean datasets
-incdients =
+incidents =
     load("data/incidents.geojson") |>
     Map(:law_cat_cd => map_law_cat => "law_cat") |>
     Map([:ofns_desc, :law_cat] => map_crime_cat => "crime_cat") |>
-    Filter(filter_crime_types)
+    Filter(filter_crime_types) |>
+    Select("crime_cat")
 
 arrests =
     load("data/arrests.geojson") |>
+    DropMissing() |>
     Map(:law_cat_cd => map_law_cat => "law_cat") |>
     Map([:ofns_desc, :law_cat] => map_crime_cat => "crime_cat") |>
-    Filter(filter_crime_types)
+    Filter(filter_crime_types) |>
+    Select("crime_cat")
 
 place_data = []
-@sync for place in readdir("data/places/")
-    Threads.@spawn push!(place_data, JSON.parsefile("data/places/" * place))
+@threads for place in readdir("data/places/")
+    push!(place_data, parsefile("data/places/" * place))
 end
 
 places = georef(DataFrame(GoogleMapsPlaceSearch.flattenplace.(place_data)), [:lon, :lat])
