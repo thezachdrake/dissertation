@@ -1,8 +1,10 @@
 module GoogleMapsPlaceSearch
 
 export GoogleAPI
-
-import HTTP, JSON, DataFrames, Missings, GeoIO, Meshes, Base.Threads
+using Match
+using Meshes
+using Base.Threads
+import HTTP, JSON, Missings, GeoIO, Meshes, Base.Threads
 
 @kwdef struct GoogleAPI
     base::String
@@ -15,7 +17,7 @@ function placedetails(api::GoogleAPI, area::Meshes.MultiPolygon, api_limit::Inte
 
     println("Running nearby search for each grid point.")
     @sync begin
-        Threads.@spawn for search_point in search_grid_points
+        @spawn for search_point in search_grid_points
             for i in _nearbysearch(api = api, search_point = search_point)
                 _saveplacefile(i, "data/")
             end
@@ -138,7 +140,7 @@ function extracttypes(; place_types::Vector{Any})::Dict{String,Bool}
 end
 
 
-alltypes::Dict{String,String} = Dict(
+map_top_place_category(category::String) = @match category
     "car_dealer" => "automotive",
     "car_rental" => "automotive",
     "car_repair" => "automotive",
@@ -374,9 +376,4 @@ alltypes::Dict{String,String} = Dict(
     "sublocality_level_5" => "typeb",
     "subpremise" => "typeb",
     "town_square" => "typeb",
-)
-
-typeslist::Vector{String} = collect(keys(alltypes))
-
-
 end

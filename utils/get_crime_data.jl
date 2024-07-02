@@ -4,9 +4,8 @@ using GeoTables
 using JSON
 
 function fetch_geo(url::String, fields::Vector{String}, query::String, name::String)
-
     response::HTTP.Response = HTTP.get(
-        url,
+        url;
         query = [
             "\$\$app_token" => "PoXtpm9UpT6UnvUOK8F0lp3Sp",
             "\$limit" => 10000000,
@@ -17,8 +16,7 @@ function fetch_geo(url::String, fields::Vector{String}, query::String, name::Str
 
     table::GeoTable = GeoIO.load(String(response.body))
 
-    GeoIO.save("data/$name.geojson", table)
-
+    return GeoIO.save("data/$name.geojson", table)
 end
 
 fetch_geo(
@@ -48,4 +46,3 @@ fetch_geo(
 #     "boro_nm == 'MANHATTAN'",
 #     "services",
 # )
-
