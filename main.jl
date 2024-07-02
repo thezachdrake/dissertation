@@ -6,7 +6,7 @@ import Base.Threads: @threads
 using BenchmarkTools
 # include("GoogleMapsPlaceSearch.jl")
 # using .GoogleMapsPlaceSearch
-include("cleaning_tools.jl")
+include("./utils/clean_crime.jl")
 
 ### load and clean datasets
 incidents =
