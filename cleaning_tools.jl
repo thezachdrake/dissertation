@@ -1,3 +1,5 @@
+using Match
+
 const crimecategories = ["VIOLENCE", "LARCENY", "DRUGS", "BURGLARY"]
 
 map_law_cat(law_cat_cd::String)::String = @match law_cat_cd begin
