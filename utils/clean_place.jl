@@ -1,6 +1,7 @@
-import Meshes: Point
-import Match: @match
 using GeoStats
+import Meshes: Point
+import CoordRefSystems: LatLon
+import Match: @match
 import DataFrames: DataFrame
 import GeoTables: GeoTable
 import JSON: parsefile
@@ -19,12 +20,13 @@ function build_place_table(dir::String)::GeoTable
     for place in raw_places
         push!(place_id, get(raw_places[575], "id", ""))
         push!(
-            geometry, Point(place["location"]["longitude"], place["location"]["latitude"])
+            geometry, Point(LatLon{WGS84Latest}(place["location"]["latitude"], place["location"]["longitude"]))
         )
         push!(primary_type, get(place, "primaryType", ""))
     end
 
     table = DataFrame(; place_id=place_id, primary_type=primary_type)
+
 
     return georef(table, geometry)
 end
