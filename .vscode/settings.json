@@ -1,3 +1,9 @@
 {
-    "editor.defaultFormatter": "singularitti.vscode-julia-formatter"
+    "editor.defaultFormatter": "singularitti.vscode-julia-formatter",
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[julia]": {
+        "editor.defaultFormatter": "julialang.language-julia"
+    }
 }

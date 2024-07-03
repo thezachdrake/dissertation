@@ -1,12 +1,8 @@
 using GeoStats
-import JSON: parsefile
 import GeoIO: load
-import CairoMakie as Mke
-import Base.Threads: @threads
-using BenchmarkTools
-# include("GoogleMapsPlaceSearch.jl")
-# using .GoogleMapsPlaceSearch
 include("./utils/clean_crime.jl")
+include("./utils/clean_place.jl")
+include("./utils/clean_streets.jl")
 
 ### load and clean datasets
 incidents =
@@ -16,6 +12,7 @@ incidents =
     Filter(filter_crime_types) |>
     Select("crime_cat")
 
+
 arrests =
     load("data/arrests.geojson") |>
     DropMissing() |>
@@ -24,21 +21,19 @@ arrests =
     Filter(filter_crime_types) |>
     Select("crime_cat")
 
-place_data = []
-@threads for place in readdir("data/places/")
-    push!(place_data, parsefile("data/places/" * place))
-end
+places =
+    build_place_table("data/places/") |>
+    Map(:primary_type => map_top_place_category => "top_cat")
 
-places = georef(DataFrame(GoogleMapsPlaceSearch.flattenplace.(place_data)), [:lon, :lat])
+streets =
+    load("data/streets.geojson") |>
+    Filter(filter_streets_manhattan) |>
+    Select("physicalid")
 
-streets = load("data/streets.geojson")
-filter!([:borocode, :rw_type, :physicalid] => filter_streets_manhattan, streets)
+### spatial joins to create street level counts
 
-street_to_point = streets |> Transfer(incidents.geometry)
-incidents_street =
-    hcat(street_to_point, georef(select(incidents, Not(:geometry)), incidents.geometry)) |>
-    DataFrame
+incidents_on_street = streets |> Transfer(incidents.geometry)
 
-x = combine(groupby(incidents_street, :physicalid), :physicalid => length => :count)
+incidents_on_street = hcat(incidents, incidents_on_street)
 
-sort(x, :count)
+incidents
