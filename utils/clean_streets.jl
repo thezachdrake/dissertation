@@ -1,3 +1,5 @@
+import Unitful: ustrip
+
 function filter_streets_manhattan(row)::Bool
     if row.borocode != "1"
         return false
@@ -12,4 +14,13 @@ function filter_streets_manhattan(row)::Bool
     end
 
     return true
+end
+
+function calc_median_street_dist_center(streets_geom::Domain)::Float64
+    streets_no_units = []
+    for geom in streets_geom
+        push!(streets_no_units, ustrip(length(geom)))
+    end
+
+    return median(streets_no_units) / 2
 end

@@ -1,4 +1,4 @@
-using Match
+import Match: @match
 
 const CRIME_CATEGORIES = ["VIOLENCE", "LARCENY", "DRUGS", "BURGLARY"]
 
@@ -12,6 +12,10 @@ end
 
 function filter_crime_types(row::TableTransforms.CTableRow)::Bool
     return row."crime_cat" in CRIME_CATEGORIES
+end
+
+function filter_bad_locations(row::TableTransforms.CTableRow)::Bool
+    return row."geometry".x != 0.0f0u"°" & row."geometry".y != 0.0f0u"°"
 end
 
 function map_crime_cat(ofns_desc::String, law_cat::String)::String

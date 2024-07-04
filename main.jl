@@ -1,8 +1,9 @@
 using GeoStats
 import GeoIO: load
-include("./utils/clean_crime.jl")
-include("./utils/clean_place.jl")
-include("./utils/clean_streets.jl")
+import CairoMakie: hist, set_theme!, theme_dark
+import DataFrames: filter
+include("./utils/load_utils.jl")
+set_theme!(theme_dark())
 
 ### load and clean datasets
 incidents =
@@ -32,8 +33,9 @@ streets =
 
 ### spatial joins to create street level counts
 
-incidents_on_street = streets |> Transfer(incidents.geometry)
+street_to_points = match_points_streets(incidents, streets)
+median_street_dist_center = calc_median_street_dist_center(streets.geometry)
+filter!(x -> x.distance < 10, street_to_points)
 
-incidents_on_street = hcat(incidents, incidents_on_street)
+hist(street_to_points[!, :distance], bins=100)
 
-incidents
