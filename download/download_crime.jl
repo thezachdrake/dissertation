@@ -6,7 +6,7 @@ using JSON
 function QueryNYCSODA(url::String, fields::Vector{String}, query::String, name::String)
     response::HTTP.Response = HTTP.get(
         url;
-        query = [
+        query=[
             "\$\$app_token" => ENV["SODA_KEY"],
             "\$limit" => 10000000,
             "\$select" => join(fields, ","),
@@ -23,6 +23,7 @@ function GetCrimeData()
     QueryNYCSODA(
         "https://data.cityofnewyork.us/resource/5uac-w243.geojson",
         [
+            "cmplnt_num",
             "ofns_desc",
             "law_cat_cd",
             "boro_nm",
@@ -36,7 +37,7 @@ function GetCrimeData()
 
     QueryNYCSODA(
         "https://data.cityofnewyork.us/resource/uip8-fykc.geojson",
-        ["ofns_desc", "law_cat_cd", "arrest_boro", "geocoded_column"],
+        ["arrest_key", "ofns_desc", "law_cat_cd", "arrest_boro", "geocoded_column",],
         "arrest_boro == 'M' AND geocoded_column IS NOT NULL",
         "arrests",
     )

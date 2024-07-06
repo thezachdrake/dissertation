@@ -1,28 +1,22 @@
 import Meshes: KNearestSearch, searchdists
 import Unitful: ustrip
 import Distances: Cityblock
+import GeoTables: tablejoin
 
-function match_points_streets(points::GeoTable, streets::GeoTable)::DataFrame
+function match_points_streets!(points::GeoTable, streets::GeoTable)::DataFrame
 
     knn::KNearestSearch = KNearestSearch(streets.geometry, 1, metric=Cityblock())
-    distnace_lookups = Vector{Dict}()
+    distances = []
+    neighbors = []
     for point in points.geometry
-        point_lookup = nearest_street_to_point(point, knn)
-        push!(distnace_lookups, point_lookup)
+        neighbor, distance = searchdists(point, knn)
+        append!(neighbors, neighbor)
+        append!(distances, ustrip(distance))
     end
 
-    return DataFrame(distnace_lookups)
-end
+    data_table::DataFrame = deepcopy(values(points))
+    data_table[!, :distance] .= distances
+    data_table[!, :street_id] .= string.(neighbors)
 
-function nearest_street_to_point(p::Point, search::KNearestSearch)::Dict{String,Any}
-    neighbors, distances = searchdists(p, search)
-    neighbors_distance_lookup = Dict{String,Any}()
-    num_neighbors::Int64 = length(neighbors)
-    for i in num_neighbors
-        neighbors_distance_lookup["point"] = p
-        neighbors_distance_lookup["street_idx"] = @inbounds neighbors[i]
-        neighbors_distance_lookup["distance"] = @inbounds ustrip(distances[i])
-    end
-
-    return neighbors_distance_lookup
+    return data_table
 end
