@@ -1,20 +1,13 @@
-using Meshes: Point, coords, PointSet, Domain, GeometrySet
-using CoordRefSystems
-using Unitful
+using Statistics: quantile
 
-x = Point(45.2, -73.1)
+crimes = streets.crime_VIOLENCE
 
+sorted_crimes = sort(crimes, rev=true)
+total_crimes = sum(sorted_crimes)
 
-y = Point(LatLon(-73.2, 45.2))
-Cartesian{WGS84Latest}()
-"°"
-for (i, v) in enumerate(eachrow(values(incidents)))
-    println(i)
-end
+cum_vector = cumsum(sorted_crimes)
+cum_perc = cum_vector ./ total_crimes
 
-function test_print(x::String, y::Int64)
-    println(x)
-    println(y)
-end
+filter(x -> x <= 0.25, cum_perc)
 
-test_print(43, "some text")
+filter(x -> x <= 0.50, cum_perc)
