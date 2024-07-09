@@ -20,7 +20,7 @@ function build_place_table(dir::String)::GeoTable
     geometry::Vector{Point} = []
 
     for place in raw_places
-        push!(place_id, get(raw_places[575], "id", ""))
+        push!(place_id, get(place, "id", ""))
         push!(
             geometry, Point(LatLon{WGS84Latest}(place["location"]["latitude"], place["location"]["longitude"]))
         )

@@ -2,15 +2,12 @@ import GeoIO: load, save
 import Meshes: Point, Vec, MultiPolygon, sample, HomogeneousSampling, coords
 import JSON: json, parse, print
 import HTTP: Response, get, post
-import DotEnv: load!
 import Base.Threads: @spawn
-
-load!()
 
 function DownloadManhattan()::MultiPolygon
     response::Response = get(
         "https://data.cityofnewyork.us/resource/7t3b-ywvw.geojson";
-        query = ["\$\$app_token" => ENV["SODA_KEY"]],
+        query=["\$\$app_token" => ENV["SODA_KEY"]],
     )
 
     nyc_geotable = load(String(response.body))
@@ -20,17 +17,17 @@ end
 function NearbySearch(search_point::Point)::Vector
     lon_lat = coords(search_point)
 
-    api_headers::Vector{Pair{String, String}} = [
+    api_headers::Vector{Pair{String,String}} = [
         "Content-Type" => "application/json",
         "X-Goog-Api-Key" => ENV["GOOGLE_MAPS_KEY"],
         "X-Goog-FieldMask" => "*",
     ]
 
-    body::Dict{String, Any} = Dict(
+    body::Dict{String,Any} = Dict(
         "rankPreference" => "DISTANCE",
-        "locationRestriction" => Dict{String, Dict}(
+        "locationRestriction" => Dict{String,Dict}(
             "circle" => Dict(
-                "center" => Dict{String, Float64}(
+                "center" => Dict{String,Float64}(
                     "longitude" => lon_lat.x, "latitude" => lon_lat.y
                 ),
                 "radius" => 500,
@@ -41,7 +38,7 @@ function NearbySearch(search_point::Point)::Vector
     response::Response = post(
         "https://places.googleapis.com/v1/places:searchNearby", api_headers, json(body)
     )
-    data::Dict{String, Any} = parse(String(response.body))
+    data::Dict{String,Any} = parse(String(response.body))
 
     if length(data) > 0
         return data["places"]
@@ -50,7 +47,7 @@ function NearbySearch(search_point::Point)::Vector
     end
 end
 
-function SampleSearchPoints(area::MultiPolygon, api_limit::Integer = 4000)::Vector{Point}
+function SampleSearchPoints(area::MultiPolygon, api_limit::Integer=4000)::Vector{Point}
     points::Vector{Any} = zeros(api_limit + 1)
 
     sampler::HomogeneousSampling = HomogeneousSampling(api_limit)
@@ -59,7 +56,7 @@ function SampleSearchPoints(area::MultiPolygon, api_limit::Integer = 4000)::Vect
     return points
 end
 
-function SavePlaceFile(place::Dict{String, Any}, path::String)
+function SavePlaceFile(place::Dict{String,Any}, path::String)
     filename::String = path * place["id"] * ".json"
     open(filename, "w") do f
         print(f, place)

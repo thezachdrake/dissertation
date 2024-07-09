@@ -24,9 +24,6 @@ function calc_top_crime_cols(data::GeoTable, crime_cols::Vector{Symbol})::GeoTab
         rename!(top_50, :is_top_crimes => ("top_50_" * col_name))
         data = tablejoin(data, top_50, on=:street_id)
 
-        top_100 = calc_decile(values(data), :street_id, crime_col, index=1.0)
-        rename!(top_100, :is_top_crimes => ("top_100_" * col_name))
-        data = tablejoin(data, top_100, on=:street_id)
     end
 
     return data
