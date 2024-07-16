@@ -8,7 +8,7 @@ import JSON: parsefile
 import Base.Threads: @spawn
 
 function build_place_table(dir::String)::GeoTable
-    raw_places::Vector{Dict{String,Any}} = []
+    raw_places::Vector{Dict{String, Any}} = []
     @sync begin
         for place in readdir(dir)
             @async push!(raw_places, parsefile(dir * place))
@@ -16,21 +16,24 @@ function build_place_table(dir::String)::GeoTable
     end
 
     place_id::Vector{String} = []
-    primary_type::Vector{Union{String,Missing}} = []
+    primary_type::Vector{Union{String, Missing}} = []
     geometry::Vector{Point} = []
 
     for place in raw_places
         push!(place_id, get(place, "id", ""))
         push!(
-            geometry, Point(LatLon{WGS84Latest}(place["location"]["latitude"], place["location"]["longitude"]))
+            geometry,
+            Point(
+                LatLon{WGS84Latest}(
+                    place["location"]["latitude"],
+                    place["location"]["longitude"],
+                ),
+            ),
         )
         push!(primary_type, get(place, "primaryType", missing))
     end
 
-    table = DataFrame(; place_id=place_id, primary_type=primary_type)
-
-
-    return georef(table, geometry)
+    return georef((place_id = place_id, primary_type = primary_type), geometry)
 end
 
 map_top_place_category(category::String) = @match category begin
