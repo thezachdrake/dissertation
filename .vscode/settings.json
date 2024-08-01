@@ -1,9 +1,14 @@
 {
-    "editor.defaultFormatter": "singularitti.vscode-julia-formatter",
     "[json]": {
         "editor.defaultFormatter": "vscode.json-language-features"
     },
-    "[julia]": {
-        "editor.defaultFormatter": "julialang.language-julia"
-    }
+    "material-icon-theme.folders.associations": {
+        "places": "global",
+    },
+    "julia.cellDelimiters": [
+        
+        "^##(?!#)",
+        "^#(\\s?)%%",
+        "^#-"
+    ]
 }
