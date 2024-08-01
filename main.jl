@@ -82,9 +82,9 @@ arrests = @chain arrests_geo begin
 end
 
 model_data::DataFrame = @chain DataFrame(values(streets_geo)) begin
-    leftjoin(incidents, on = :street_id)
-    leftjoin(places, on = :street_id)
-    leftjoin(arrests, on = :street_id)
+    leftjoin(incidents, on=:street_id)
+    leftjoin(places, on=:street_id)
+    leftjoin(arrests, on=:street_id)
     coalesce.(0)
 end
 
@@ -92,3 +92,11 @@ calc_top_crime_cols!(
     model_data,
     [:incidents_LARCENY, :incidents_VIOLENCE, :incidents_BURGLARY, :incidents_DRUGS],
 )
+
+place_terms = Term.(Symbol.(filter(x -> contains(x, "category"), names(model_data))))
+
+pred_25_burglary = Term(:top_25_VIOLENCE) ~ sum(place_terms)
+
+foldl(*, place_terms)
+
+glm(pred_25_burglary, model_data, Bernoulli(), LogitLink())
