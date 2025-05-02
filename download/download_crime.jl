@@ -2,8 +2,10 @@ using HTTP
 using GeoIO
 using GeoTables
 using JSON
+using Logging
 
 function QueryNYCSODA(url::String, fields::Vector{String}, query::String, name::String)
+    @info "Querying SODA API for '$name'" url query
     response::HTTP.Response = HTTP.get(
         url;
         query=[
@@ -13,13 +15,19 @@ function QueryNYCSODA(url::String, fields::Vector{String}, query::String, name::
             "\$where" => query,
         ],
     )
+    @debug "Received response" status = response.status size = length(response.body)
 
     table::GeoTable = GeoIO.load(String(response.body))
 
-    return GeoIO.save("data/$name.geojson", table)
+    filepath = "data/$name.geojson"
+    GeoIO.save(filepath, table)
+    @info "Saved data to '$filepath'"
+    return nothing
 end
 
 function GetCrimeData()
+    @info "Starting crime data download..."
+    @info "Fetching incidents data..."
     QueryNYCSODA(
         "https://data.cityofnewyork.us/resource/5uac-w243.geojson",
         [
@@ -35,6 +43,7 @@ function GetCrimeData()
         "incidents",
     )
 
+    @info "Fetching arrests data..."
     QueryNYCSODA(
         "https://data.cityofnewyork.us/resource/uip8-fykc.geojson",
         ["arrest_key", "ofns_desc", "law_cat_cd", "arrest_boro", "geocoded_column",],
@@ -49,6 +58,7 @@ function GetCrimeData()
     #     "services",
     # )
 
+    @info "Finished crime data download."
     return nothing
 end
 

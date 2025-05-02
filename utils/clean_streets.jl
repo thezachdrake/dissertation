@@ -1,7 +1,7 @@
 import Unitful: ustrip
 
 function filter_streets_manhattan(row)::Bool
-    if row.borocode != "1"
+    if row.boroughcode != "1"
         return false
     end
 

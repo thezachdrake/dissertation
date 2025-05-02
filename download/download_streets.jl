@@ -1,14 +1,14 @@
 using GeoTables
-import GeoIO: save, load
-import HTTP: get
+import GeoIO
+import HTTP
 using JSON
 
 function GetStreetData()
-    response::Response = get(
-        "https://data.cityofnewyork.us/resource/8rma-cm9c.geojson";
+    response::HTTP.Response = get(
+        "https://data.cityofnewyork.us/resource/inkn-q76z.geojson";
         query=["\$\$app_token" => ENV["SODA_KEY"], "\$limit" => 100000000],
     )
-
-    rawdata = load(String(response.body))
-    return save("data/streets.geojson", rawdata)
+    filepath = "data/streets.geojson"
+    write(filepath, response.body)
+    @info "Saved data to '$filepath'"
 end

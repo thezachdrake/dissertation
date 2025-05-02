@@ -1,14 +1,24 @@
 using GeoStats
-import GeoIO: load
-import Chain: @chain
-import CairoMakie: barplot, density, set_theme!, theme_dark
-import DataFrames: filter, groupby, combine, transform!, leftjoin, rename!
+using GeoIO
+using CairoMakie
+using DataFrames
+using CSV
 using GLM
+using StatsModels
+using Chain: @chain
+using FileIO
+
 include("./utils/load_utils.jl")
+include("modeling.jl")
+include("utils/summary_stats.jl")
+
+using .Modeling
+using .SummaryStats
+
 set_theme!(theme_dark())
 
 incidents_geo =
-    load("data/incidents.geojson") |>
+    GeoIO.load("data/incidents.geojson") |>
     Map(:law_cat_cd => map_law_cat => "law_cat") |>
     Map([:ofns_desc, :law_cat] => map_crime_cat => "crime_cat") |>
     Filter(filter_crime_types) |>
@@ -16,7 +26,7 @@ incidents_geo =
     OneHot("crime")
 
 arrests_geo =
-    load("data/arrests.geojson") |>
+    GeoIO.load("data/arrests.geojson") |>
     DropMissing() |>
     Map(:law_cat_cd => map_law_cat => "law_cat") |>
     Map([:ofns_desc, :law_cat] => map_crime_cat => "crime_cat") |>
@@ -32,7 +42,7 @@ places_geo =
     OneHot("category")
 
 streets_geo =
-    load("data/streets.geojson") |>
+    GeoIO.load("data/streets.geojson") |>
     Filter(filter_streets_manhattan) |>
     Select("physicalid" => "street_id")
 median_street_dist_center = calc_median_street_dist_center(streets_geo.geometry)
@@ -93,10 +103,51 @@ calc_top_crime_cols!(
     [:incidents_LARCENY, :incidents_VIOLENCE, :incidents_BURGLARY, :incidents_DRUGS],
 )
 
+# Define output directory
+output_dir = "output"
+mkpath(output_dir) # Use mkpath to avoid error if dir exists
+
+# --- Calculate and Save Place Category Stats using Utility Function ---
+(place_distributions, cooccurrence_df, correlation_df) = SummaryStats.calculate_place_category_stats(model_data)
+CSV.write(joinpath(output_dir, "place_category_distributions.csv"), place_distributions)
+println("Saved place category distributions to output/place_category_distributions.csv")
+CSV.write(joinpath(output_dir, "place_category_cooccurrence.csv"), cooccurrence_df)
+println("Saved place category co-occurrence matrix to output/place_category_cooccurrence.csv")
+CSV.write(joinpath(output_dir, "place_category_correlation.csv"), correlation_df)
+println("Saved place category correlation matrix to output/place_category_correlation.csv")
+
+# --- Generate Statistics Visualizations ---
+println("\nIncluding statistics visualization script...")
+include("visualize_stats.jl")
+
+# --- Calculate and Save Distributions for 'top_' columns ---
+top_cols_sym = Symbol.(filter(x -> startswith(x, "top_"), names(model_data)))
+
+println("Calculating distributions for 'top_' columns...")
+distributions = calculate_boolean_column_distributions(model_data, top_cols_sym)
+
+# Save distributions to a CSV file
+dist_filename = joinpath(output_dir, "top_crime_distributions.csv")
+CSV.write(dist_filename, distributions)
+println("Saved 'top_' column distributions to $dist_filename")
+
+# --- Model fitting part ---
+println("Fitting logistic regression models...")
 place_terms = Term.(Symbol.(filter(x -> contains(x, "category"), names(model_data))))
 
-pred_25_burglary = Term(:top_25_VIOLENCE) ~ sum(place_terms)
+# Get target columns for modeling (ensure they exist)
+target_cols_for_modeling = Symbol.(filter(x -> startswith(x, "top_") && x in names(model_data), names(model_data)))
 
-foldl(*, place_terms)
+fitted_logit_models = fit_logit_models(model_data, target_cols_for_modeling, place_terms)
 
-glm(pred_25_burglary, model_data, Bernoulli(), LogitLink())
+println("Finished fitting models. Results stored in fitted_logit_models dictionary.")
+
+# --- Save Model Summaries and Coefficients ---
+Modeling.save_model_summaries(fitted_logit_models, output_dir)
+Modeling.save_model_coefficients(fitted_logit_models, output_dir)
+
+# --- Generate Model Visualizations ---
+println("\nIncluding model visualization script...")
+include("visualize_models.jl")
+
+println("\nScript finished.")

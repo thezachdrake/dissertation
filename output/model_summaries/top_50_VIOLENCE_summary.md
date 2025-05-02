@@ -1,0 +1,30 @@
+# Model Summary: top_50_VIOLENCE
+
+## Formula
+
+```
+top_50_VIOLENCE ~ 1 + category_AUTOMOTIVE + category_BUSINESS + category_CULTURE + category_EDUCATION + category_FINANCE + category_FOODBEV + category_GOVERNMENT + category_HEALTH + category_LODGING + category_RECREATION + category_SERVICES + category_SHOPPING + category_TRANSPORTATION
+```
+
+## Coefficients
+
+```
+────────────────────────────────────────────────────────────────────────────────────────
+                              Coef.  Std. Error       z  Pr(>|z|)   Lower 95%  Upper 95%
+────────────────────────────────────────────────────────────────────────────────────────
+(Intercept)              -4.55347     0.102281   -44.52    <1e-99  -4.75393    -4.353
+category_AUTOMOTIVE       0.408813    0.0842786    4.85    <1e-05   0.24363     0.573997
+category_BUSINESS         0.348119    1.12587      0.31    0.7572  -1.85854     2.55478
+category_CULTURE         -0.0422021   0.231422    -0.18    0.8553  -0.49578     0.411376
+category_EDUCATION        0.295439    0.101869     2.90    0.0037   0.0957792   0.495099
+category_FINANCE          0.533956    0.174686     3.06    0.0022   0.191578    0.876334
+category_FOODBEV          0.0482953   0.0463755    1.04    0.2977  -0.0425989   0.13919
+category_GOVERNMENT      -0.407195    0.688467    -0.59    0.5542  -1.75657     0.942177
+category_HEALTH           0.0303096   0.0377617    0.80    0.4222  -0.0437019   0.104321
+category_LODGING          0.342653    0.318464     1.08    0.2819  -0.281525    0.96683
+category_RECREATION       0.355516    0.118345     3.00    0.0027   0.123564    0.587468
+category_SERVICES         0.1525      0.037679     4.05    <1e-04   0.0786505   0.22635
+category_SHOPPING         0.131128    0.0433106    3.03    0.0025   0.0462409   0.216015
+category_TRANSPORTATION   0.327234    0.140217     2.33    0.0196   0.0524141   0.602055
+────────────────────────────────────────────────────────────────────────────────────────
+```

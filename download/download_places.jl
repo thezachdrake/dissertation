@@ -3,19 +3,27 @@ import Meshes: Point, Vec, MultiPolygon, sample, HomogeneousSampling, coords
 import JSON: json, parse, print
 import HTTP: Response, get, post
 import Base.Threads: @spawn
+using Logging
+using Unitful # Import Unitful
 
 function DownloadManhattan()::MultiPolygon
+    @info "Downloading Manhattan GeoJSON..."
     response::Response = get(
-        "https://data.cityofnewyork.us/resource/7t3b-ywvw.geojson";
+        "https://data.cityofnewyork.us/resource/gthc-hcne.geojson";
         query=["\$\$app_token" => ENV["SODA_KEY"]],
     )
+    @debug "Received Manhattan GeoJSON response" status = response.status size = length(response.body)
 
     nyc_geotable = load(String(response.body))
     return nyc_geotable[2, :geometry]
 end
 
 function NearbySearch(search_point::Point)::Vector
-    lon_lat = coords(search_point)
+    # Extract coordinates and strip units to get Float64
+    search_coords_raw = coords(search_point)
+    lon_float = ustrip(search_coords_raw.lon) # Remove the type argument
+    lat_float = ustrip(search_coords_raw.lat) # Remove the type argument
+    @info "Performing Nearby Search" longitude = lon_float latitude = lat_float
 
     api_headers::Vector{Pair{String,String}} = [
         "Content-Type" => "application/json",
@@ -28,7 +36,7 @@ function NearbySearch(search_point::Point)::Vector
         "locationRestriction" => Dict{String,Dict}(
             "circle" => Dict(
                 "center" => Dict{String,Float64}(
-                    "longitude" => lon_lat.x, "latitude" => lon_lat.y
+                    "longitude" => lon_float, "latitude" => lat_float
                 ),
                 "radius" => 500,
             ),
@@ -38,11 +46,14 @@ function NearbySearch(search_point::Point)::Vector
     response::Response = post(
         "https://places.googleapis.com/v1/places:searchNearby", api_headers, json(body)
     )
+    @debug "Received Nearby Search response" status = response.status size = length(response.body)
     data::Dict{String,Any} = parse(String(response.body))
 
-    if length(data) > 0
+    if haskey(data, "places") && length(data["places"]) > 0
+        @debug "Found places" count = length(data["places"])
         return data["places"]
     else
+        @debug "No places found for this location."
         return []
     end
 end
@@ -52,12 +63,14 @@ function SampleSearchPoints(area::MultiPolygon, api_limit::Integer=4000)::Vector
 
     sampler::HomogeneousSampling = HomogeneousSampling(api_limit)
     points = sample(area, sampler) |> collect
+    @debug "Generated sample points" count = length(points)
 
     return points
 end
 
 function SavePlaceFile(place::Dict{String,Any}, path::String)
     filename::String = path * place["id"] * ".json"
+    @debug "Saving place data" filename
     open(filename, "w") do f
         print(f, place)
     end
@@ -70,11 +83,22 @@ function GetPlaceData()
     search_grid_points::Vector{Point} = SampleSearchPoints(area)
 
     @info "Running nearby search for each grid point."
-    @sync begin
-        @spawn for search_point in search_grid_points
-            @spawn for i in NearbySearch(search_point)
-                SavePlaceFile(i, "data/")
+    # Consider adding progress logging here if the loop takes a long time
+
+    counter = 0
+    for search_point in search_grid_points
+        try
+            sleep(0.25)
+            places_found = NearbySearch(search_point)
+            for i in places_found
+                SavePlaceFile(i, "data/places/")
             end
+            counter = counter + 1
+            @info "Completed $(counter) calls "
+        catch e
+            # @error "Error during nearby search or saving for point $(coords(search_point))" exception = (e, catch_backtrace())
         end
     end
+
+    @info "Finished place data download."
 end
