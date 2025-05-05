@@ -1,0 +1,34 @@
+Model Summary: top_25_arrests_VIOLENCE
+========================================
+Formula: top_25_arrests_VIOLENCE ~ 1 + category_AUTOMOTIVE + category_BUSINESS + category_CULTURE + category_EDUCATION + category_FINANCE + category_FOODBEV + category_GOVERNMENT + category_HEALTH + category_LODGING + category_RECREATION + category_SERVICES + category_SHOPPING + category_TRANSPORTATION
+
+Model Diagnostics:
+----------------
+  Observations:     9285
+  Deviance:         74.4316
+  Null Deviance:    100.1289
+  Log-Likelihood:   -37.2158
+  AIC:              102.4316
+  BIC:              202.3377
+  McFadden's R²:    0.2566
+
+Coefficients:
+-------------
+─────────────────────────────────────────────────────────────────────────────────────────────
+                              Coef.   Std. Error       z  Pr(>|z|)     Lower 95%    Upper 95%
+─────────────────────────────────────────────────────────────────────────────────────────────
+(Intercept)               -8.05705      0.58524   -13.77    <1e-42     -9.2041      -6.91
+category_AUTOMOTIVE        0.819525     0.240151    3.41    0.0006      0.348838     1.29021
+category_BUSINESS         -8.53125   1585.88       -0.01    0.9957  -3116.8       3099.73
+category_CULTURE           0.37401      0.577738    0.65    0.5174     -0.758335     1.50635
+category_EDUCATION         0.443631     0.376567    1.18    0.2388     -0.294427     1.18169
+category_FINANCE         -12.7265     260.638      -0.05    0.9611   -523.567      498.114
+category_FOODBEV          -0.451349     0.754293   -0.60    0.5496     -1.92974      1.02704
+category_GOVERNMENT        0.91485      0.358913    2.55    0.0108      0.211393     1.61831
+category_HEALTH           -0.291405     0.503408   -0.58    0.5627     -1.27807      0.695256
+category_LODGING           1.8567       1.17905     1.57    0.1153     -0.454205     4.1676
+category_RECREATION        0.491778     0.384696    1.28    0.2011     -0.262212     1.24577
+category_SERVICES          0.17395      0.226132    0.77    0.4418     -0.269262     0.617161
+category_SHOPPING          0.139869     0.218568    0.64    0.5222     -0.288517     0.568255
+category_TRANSPORTATION  -10.6963     211.441      -0.05    0.9597   -425.114      403.721
+─────────────────────────────────────────────────────────────────────────────────────────────

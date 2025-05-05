@@ -2,7 +2,7 @@
 
 julia_version = "1.11.5"
 manifest_format = "2.0"
-project_hash = "0db6d0f2fa274f2abb91dd19b66678b3fcddbd66"
+project_hash = "5c4da6e554be4d884a202db85f996edcc1c94f39"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "e2478490447631aedba0823d4d7a80b2cc8cdb32"
@@ -443,9 +443,9 @@ uuid = "9cc86067-7e36-4c61-b350-1ac9833d277f"
 version = "1.0.0"
 
 [[deps.Combinatorics]]
-git-tree-sha1 = "08c8b6831dc00bfea825826be0bc8336fc369860"
+git-tree-sha1 = "8010b6bb3388abe68d95743dcbea77650bb2eddf"
 uuid = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
-version = "1.0.2"
+version = "1.0.3"
 
 [[deps.CommonDataModel]]
 deps = ["CFTime", "DataStructures", "Dates", "Preferences", "Printf", "Statistics"]
@@ -1006,9 +1006,9 @@ version = "0.4.4"
 
 [[deps.GeoIO]]
 deps = ["ArchGDAL", "CSV", "Colors", "CommonDataModel", "CoordRefSystems", "FileIO", "Format", "GRIBDatasets", "GeoFormatTypes", "GeoInterface", "GeoJSON", "GeoParquet", "GeoTIFF", "GeoTables", "GslibIO", "ImageIO", "JSON3", "Meshes", "NCDatasets", "PlyIO", "PrecompileTools", "PrettyTables", "ReadVTK", "Shapefile", "StaticArrays", "Tables", "TransformsBase", "Unitful", "VTKBase", "WriteVTK"]
-git-tree-sha1 = "3cd80239a4ba9cf3359186c05ec94c6f1d9f9b6a"
+git-tree-sha1 = "77975e40516490648d14d4d4bfdc1287103c108d"
 uuid = "f5a160d5-e41d-4189-8b61-d57781c419e3"
-version = "1.19.18"
+version = "1.19.20"
 
 [[deps.GeoInterface]]
 deps = ["DataAPI", "Extents", "GeoFormatTypes"]
@@ -1341,10 +1341,10 @@ weakdeps = ["Unitful"]
     InterpolationsUnitfulExt = "Unitful"
 
 [[deps.IntervalArithmetic]]
-deps = ["CRlibm", "MacroTools", "OpenBLASConsistentFPCSR_jll", "RoundingEmulator"]
-git-tree-sha1 = "8e473101c9dc0ee3825908b402c79fef33079fcd"
+deps = ["CRlibm", "MacroTools", "OpenBLASConsistentFPCSR_jll", "Random", "RoundingEmulator"]
+git-tree-sha1 = "4e1b4155f04ffa0acf3a0d6e3d651892604666f5"
 uuid = "d1acc4aa-44c8-5952-acd4-ba5d80a2a253"
-version = "0.22.31"
+version = "0.22.34"
 weakdeps = ["DiffRules", "ForwardDiff", "IntervalSets", "LinearAlgebra", "RecipesBase", "SparseArrays"]
 
     [deps.IntervalArithmetic.extensions]
@@ -1396,6 +1396,12 @@ version = "0.1.1"
 git-tree-sha1 = "42d5f897009e7ff2cf88db414a389e5ed1bdd023"
 uuid = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
 version = "1.10.0"
+
+[[deps.IterativeSolvers]]
+deps = ["LinearAlgebra", "Printf", "Random", "RecipesBase", "SparseArrays"]
+git-tree-sha1 = "59545b0a2b27208b0650df0a46b8e3019f85055b"
+uuid = "42fd0dbc-a981-5370-80f2-aaf504508153"
+version = "0.9.4"
 
 [[deps.IteratorInterfaceExtensions]]
 git-tree-sha1 = "a3f24677c21f5bbe9d2a714f95dcd58337fb2856"
@@ -1613,6 +1619,18 @@ deps = ["Libdl", "OpenBLAS_jll", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 version = "1.11.0"
 
+[[deps.LinearMaps]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "7f6be2e4cdaaf558623d93113d6ddade7b916209"
+uuid = "7a12625a-238d-50fd-b39a-03d52299707e"
+version = "3.11.4"
+weakdeps = ["ChainRulesCore", "SparseArrays", "Statistics"]
+
+    [deps.LinearMaps.extensions]
+    LinearMapsChainRulesCoreExt = "ChainRulesCore"
+    LinearMapsSparseArraysExt = "SparseArrays"
+    LinearMapsStatisticsExt = "Statistics"
+
 [[deps.LittleCMS_jll]]
 deps = ["Artifacts", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll"]
 git-tree-sha1 = "fa7fd067dca76cadd880f1ca937b4f387975a9f5"
@@ -1666,6 +1684,18 @@ deps = ["Artifacts", "IntelOpenMP_jll", "JLLWrappers", "LazyArtifacts", "Libdl",
 git-tree-sha1 = "5de60bc6cb3899cd318d80d627560fae2e2d99ae"
 uuid = "856f044c-d86e-5d09-b602-aeab76dc8ba7"
 version = "2025.0.1+1"
+
+[[deps.MLJLinearModels]]
+deps = ["DocStringExtensions", "IterativeSolvers", "LinearAlgebra", "LinearMaps", "MLJModelInterface", "Optim", "Parameters"]
+git-tree-sha1 = "7f517fd840ca433a8fae673edb31678ff55d969c"
+uuid = "6ee0df7b-362f-4a72-a706-9e79364fb692"
+version = "0.10.0"
+
+[[deps.MLJModelInterface]]
+deps = ["REPL", "Random", "ScientificTypesBase", "StatisticalTraits"]
+git-tree-sha1 = "66626f80d5807921045d539b4f7153b1d47c5f8a"
+uuid = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
+version = "1.11.1"
 
 [[deps.MPICH_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Hwloc_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "MPIPreferences", "TOML"]
@@ -2218,6 +2248,11 @@ git-tree-sha1 = "9a325057cdb9b066f1f96dc77218df60fe3007cb"
 uuid = "76ed43ae-9a5d-5a62-8c75-30186b810ce8"
 version = "3.48.0+0"
 
+[[deps.ScientificTypesBase]]
+git-tree-sha1 = "a8e18eb383b5ecf1b5e6fc237eb39255044fd92b"
+uuid = "30f210dd-8aff-4c5f-94ba-8e64358c1161"
+version = "3.0.0"
+
 [[deps.ScikitLearnBase]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
 git-tree-sha1 = "7877e55c1523a4b336b433da39c8e8c08d2f221f"
@@ -2410,6 +2445,12 @@ git-tree-sha1 = "192954ef1208c7019899fbf8049e717f92959682"
 uuid = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 version = "1.4.3"
 
+[[deps.StatisticalTraits]]
+deps = ["ScientificTypesBase"]
+git-tree-sha1 = "542d979f6e756f13f862aa00b224f04f9e445f11"
+uuid = "64bff920-2084-43da-a3e6-9bb72801c0c9"
+version = "3.4.0"
+
 [[deps.Statistics]]
 deps = ["LinearAlgebra"]
 git-tree-sha1 = "ae3bb1eb3bba077cd276bc5cfc337cc65c3075c0"
@@ -2428,9 +2469,9 @@ version = "1.7.0"
 
 [[deps.StatsBase]]
 deps = ["AliasTables", "DataAPI", "DataStructures", "LinearAlgebra", "LogExpFunctions", "Missings", "Printf", "Random", "SortingAlgorithms", "SparseArrays", "Statistics", "StatsAPI"]
-git-tree-sha1 = "29321314c920c26684834965ec2ce0dacc9cf8e5"
+git-tree-sha1 = "b81c5035922cc89c2d9523afc6c54be512411466"
 uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
-version = "0.34.4"
+version = "0.34.5"
 
 [[deps.StatsFuns]]
 deps = ["HypergeometricFunctions", "IrrationalConstants", "LogExpFunctions", "Reexport", "Rmath", "SpecialFunctions"]
@@ -2448,12 +2489,10 @@ deps = ["ColumnSelectors", "DataScienceTraits", "DecisionTree", "Distances", "Di
 git-tree-sha1 = "6d4e71c69298d4f1225a2245fd60530f79e74b31"
 uuid = "c146b59d-1589-421c-8e09-a22e554fd05c"
 version = "1.1.1"
+weakdeps = ["MLJModelInterface"]
 
     [deps.StatsLearnModels.extensions]
     StatsLearnModelsMLJModelInterfaceExt = "MLJModelInterface"
-
-    [deps.StatsLearnModels.weakdeps]
-    MLJModelInterface = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
 
 [[deps.StatsModels]]
 deps = ["DataAPI", "DataStructures", "LinearAlgebra", "Printf", "REPL", "ShiftedArrays", "SparseArrays", "StatsAPI", "StatsBase", "StatsFuns", "Tables"]
@@ -2668,9 +2707,9 @@ weakdeps = ["ConstructionBase", "InverseFunctions"]
     InverseFunctionsUnitfulExt = "InverseFunctions"
 
 [[deps.UnsafeArrays]]
-git-tree-sha1 = "d32529bcc1dcef5ff8cf5b6df9c5862c224fa264"
+git-tree-sha1 = "efcbb6828697ffffc245a9de7300552535abe005"
 uuid = "c4a57d5a-5b31-53a6-b365-19f8c011fbd6"
-version = "1.0.7"
+version = "1.0.8"
 
 [[deps.VTKBase]]
 git-tree-sha1 = "c2d0db3ef09f1942d08ea455a9e252594be5f3b6"

@@ -1,9 +1,9 @@
 using DataFrames, CSV, Glob, CairoMakie, Colors, ColorSchemes
+using Printf
 
 # Define directories
 output_dir = "output"
 coeffs_dir = joinpath(output_dir, "model_coefficients")
-plot_output_file = joinpath(output_dir, "model_coefficient_comparison.png")
 
 # Check if coefficient directory exists
 if !isdir(coeffs_dir)
@@ -22,10 +22,48 @@ all_coeffs = DataFrame()
 
 # Load and combine data from all files
 for file_path in csv_files
-    model_name = Symbol(replace(basename(file_path), "_coeffs.csv" => ""))
+    # Extract model name, expecting format like top_XX_source_CRIMETYPE or top_jenks_manual_source_CRIMETYPE
+    model_name_str = replace(basename(file_path), "_coeffs.csv" => "")
+    parts = split(model_name_str, '_')
+    
+    threshold::String = ""
+    source::String = ""
+    crime_type::String = ""
+    model_label::String = ""
+
+    if length(parts) >= 5 && parts[1] == "top" && parts[2] == "jenks" && parts[3] == "manual"
+        # Handle Jenks: top_jenks_manual_SOURCE_CRIMETYPE
+        threshold = "Jenks"
+        source = parts[4]      # e.g., "incidents"
+        crime_type = join(parts[5:end], '_') # Handle crime types with underscores if they exist
+        if !(source in ["incidents", "arrests"])
+             @warn "Unexpected source '$source' in Jenks model name: '$model_name_str' in file $file_path. Skipping."
+             continue
+        end
+        model_label = "$(uppercasefirst(source)) Jenks" # e.g., "Incidents Jenks"
+
+    elseif length(parts) >= 4 && parts[1] == "top" && parts[2] in ["25", "50"]
+        # Handle Percentile: top_XX_SOURCE_CRIMETYPE
+        threshold = parts[2]
+        source = parts[3]
+        crime_type = join(parts[4:end], '_') # Handle crime types with underscores
+         if !(source in ["incidents", "arrests"])
+             @warn "Unexpected source '$source' in percentile model name: '$model_name_str' in file $file_path. Skipping."
+             continue
+        end
+        model_label = "$(uppercasefirst(source)) $(threshold)%" # e.g., "Incidents 25%"
+    else
+        @warn "Unexpected model name format: '$model_name_str' in file $file_path. Skipping."
+        continue
+    end
+    
     try
         df = CSV.read(file_path, DataFrame)
-        df[!, :model] .= model_name # Add model name column
+        df[!, :model] .= Symbol(model_name_str) # Keep original symbol if needed
+        df[!, :crime_type] .= crime_type
+        df[!, :source] .= source
+        df[!, :threshold] .= threshold # Will be "25", "50", or "Jenks"
+        df[!, :model_label] .= model_label # Will be "Incidents 25%", "Arrests 50%", "Incidents Jenks", etc.
         append!(all_coeffs, df)
     catch e
         @warn "Error reading file $file_path: $e. Skipping."
@@ -38,61 +76,88 @@ end
 
 println("Processing coefficient data...")
 # Filter for category predictors (exclude intercept)
-filter!(row -> startswith(row.predictor, "category_"), all_coeffs)
+filter!(row -> startswith(string(row.predictor), "category_"), all_coeffs)
 
-# Add significance flag (e.g., p < 0.05)
-all_coeffs.significant = all_coeffs.p_value .< 0.05
+# Add significance alpha
+all_coeffs.alpha = [p < 0.05 ? 1.0 : 0.5 for p in all_coeffs.p_value]
 
-# --- Prepare for Plotting ---
+# --- Group by Crime Type and Generate Plots ---
 
-# Get unique models and predictors for axes
-models = unique(all_coeffs.model)
-predictors = unique(all_coeffs.predictor)
+# Consistent mapping for model labels within each plot
+model_order = ["Incidents 25%", "Incidents 50%", "Arrests 25%", "Arrests 50%", "Incidents Jenks", "Arrests Jenks"]
+model_map = Dict(label => i for (i, label) in enumerate(model_order))
+model_colors = ColorSchemes.Set1_6.colors # Use a 6-color scheme
 
-# Create numerical representation for models and predictors for plotting
-model_map = Dict(m => i for (i, m) in enumerate(models))
-predictor_map = Dict(p => i for (i, p) in enumerate(predictors))
+grouped_coeffs = groupby(all_coeffs, :crime_type)
 
-all_coeffs.model_idx = [model_map[m] for m in all_coeffs.model]
-all_coeffs.predictor_idx = [predictor_map[p] for p in all_coeffs.predictor]
+println("Generating plots for each crime type...")
 
-# --- Generate Dodged Bar Plot ---
-println("Generating dodged bar plot...")
+for (key, crime_df) in pairs(grouped_coeffs)
+    crime_type = key.crime_type
+    println("  Generating plot for: $crime_type")
 
-fig = Figure(size = (1200, 800))
-ax = Axis(fig[1, 1],
-          xticks = (1:length(predictors), string.(predictors)),
-          xticklabelrotation = pi/4,
-          title = "Logistic Regression Coefficients for Place Categories by Model",
-          ylabel = "Coefficient Estimate",
-          xlabel = "Place Category Predictor")
+    # Prepare data for this crime type's plot
+    df = DataFrame(crime_df) # Convert SubDataFrame to DataFrame for modification
+    filter!(row -> row.model_label in model_order, df) # Ensure only expected models are present
+    if nrow(df) == 0
+        @warn "No valid data found for crime type '$crime_type'. Skipping plot."
+        continue
+    end
+    
+    df.model_idx = [model_map[label] for label in df.model_label]
+    df.plot_color = [model_colors[idx] for idx in df.model_idx]
 
-# Assign colors using a predefined qualitative scheme with 8 colors
-if length(models) == 8
-    model_colors = ColorSchemes.Set1_8.colors
-else
-    # Fallback if the number of models changes unexpectedly
-    println("Warning: Expected 8 models, found $(length(models)). Using distinguishable_colors.")
-    model_colors = Makie.Colors.distinguishable_colors(length(models), [RGB(1,1,1)])
+    # Get unique predictors for this crime type
+    predictors = sort(unique(df.predictor))
+    predictor_map = Dict(p => i for (i, p) in enumerate(predictors))
+    df.predictor_idx = [predictor_map[p] for p in df.predictor]
+
+    # Clean predictor names for labels (remove "category_")
+    predictor_labels = [replace(string(p), "category_" => "") for p in predictors]
+
+    # Generate Plot
+    fig = Figure(size = (1000, 700))
+    ax = Axis(fig[1, 1],
+              xticks = (1:length(predictors), predictor_labels),
+              xticklabelrotation = pi/4,
+              title = "Logistic Regression Coefficients for $crime_type",
+              ylabel = "Coefficient Estimate",
+              xlabel = "Place Category Predictor")
+
+    # Create dodged bars with alpha for significance
+    barplot!(
+        ax,
+        df.predictor_idx,          # x position (predictor category)
+        df.coefficient,           # y value (coefficient)
+        dodge = df.model_idx,     # Dodging based on model index (1-6)
+        color = tuple.(df.plot_color, df.alpha) # Color by model + alpha for significance
+    )
+
+    # Add legend for models and significance
+    model_elems = [PolyElement(color = model_colors[i], strokecolor = :transparent) for i in 1:6]
+    # Use MarkerElement for significance representation
+    sig_elems = [
+        MarkerElement(color = RGBAf(0.5,0.5,0.5,1.0), marker = :rect, markersize = 15), # Solid grey square (p<0.05)
+        MarkerElement(color = RGBAf(0.5,0.5,0.5,0.5), marker = :rect, markersize = 15)  # Transparent grey square (p>=0.05)
+    ]
+    # Combine elements and labels
+    all_elems = [model_elems..., sig_elems...]
+    all_labels = [model_order..., "p < 0.05", "p >= 0.05"]
+    
+    # Create the legend with a single title
+    Legend(fig[1, 2], 
+           all_elems, 
+           all_labels, 
+           "Legend") 
+
+    # Save the plot
+    plot_output_file = joinpath(output_dir, @sprintf("model_coefficient_comparison_%s.png", crime_type))
+    try
+        save(plot_output_file, fig)
+        println("    Saved plot to $plot_output_file")
+    catch e
+        @error "Failed to save plot $plot_output_file: $e"
+    end
 end
-
-# Create dodged bars
-barplot!(
-    ax,
-    all_coeffs.predictor_idx, # x position (predictor category)
-    all_coeffs.coefficient,   # y value (coefficient)
-    dodge = all_coeffs.model_idx, # Dodging based on model index
-    color = model_colors[all_coeffs.model_idx], # Color by model
-    # Use strokecolor/strokewidth to indicate significance
-    strokewidth = [sig ? 2 : 0 for sig in all_coeffs.significant],
-    strokecolor = :black # Or another contrasting color
-)
-
-# Add legend for models
-elems = [PolyElement(color = model_colors[i], strokecolor = :transparent) for i in 1:length(models)]
-Legend(fig[1, 2], elems, string.(models), "Model (Target Variable)")
-
-save(plot_output_file, fig)
-println("Saved coefficient comparison plot to $plot_output_file")
 
 println("Model visualization script finished.")

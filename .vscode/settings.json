@@ -10,5 +10,9 @@
         "^##(?!#)",
         "^#(\\s?)%%",
         "^#-"
+    ],
+    "julia.additionalArgs": [
+        "--optimize=3",
+        "--threads=12"
     ]
 }

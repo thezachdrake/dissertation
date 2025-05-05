@@ -1,6 +1,6 @@
 module Modeling
 
-using DataFrames, GLM, StatsModels, Printf, CategoricalArrays, CSV
+using DataFrames, GLM, StatsModels, Printf, CategoricalArrays, CSV, StatsBase
 
 export fit_logit_models, save_model_summaries, save_model_coefficients
 
@@ -75,7 +75,7 @@ end
 """
     save_model_summaries(models::Dict{Symbol, StatsModels.TableRegressionModel}, output_dir::String)
 
-Saves a markdown summary for each fitted model to a file.
+Saves a Markdown summary for each fitted model to a file.
 
 # Arguments
 - `models::Dict{Symbol, StatsModels.TableRegressionModel}`: Dictionary mapping target variable symbols to fitted GLM models.
@@ -88,17 +88,51 @@ function save_model_summaries(models::Dict{Symbol,StatsModels.TableRegressionMod
 
     for (model_name, model) in models
         try
-            summary_str = "# Model Summary: $(model_name)\n\n"
+            # Start building the summary string (Markdown)
+            summary_lines = Vector{String}()
+            push!(summary_lines, "# Model Summary: $(model_name)\n")
+
             # Add formula
             formula_str = string(model.mf.f)
-            summary_str *= "## Formula\n\n```\n$(formula_str)\n```\n\n"
-            # Add coefficients table
-            ct = coeftable(model)
-            summary_str *= "## Coefficients\n\n```\n$(ct)\n```\n"
-            # Add model diagnostics (like Deviance, AIC, BIC if needed)
-            # summary_str *= "\n## Diagnostics\n\n...\n"
+            push!(summary_lines, "## Formula\n")
+            push!(summary_lines, "```")
+            push!(summary_lines, formula_str)
+            push!(summary_lines, "```\n")
 
-            # Define output filename within the subdirectory
+            # Add model diagnostics
+            push!(summary_lines, "## Model Diagnostics\n")
+            # push!(summary_lines, "----------------") # Markdown uses headings, not dashes
+            try push!(summary_lines, @sprintf("- **Observations:**     `%d`", nobs(model))) catch e push!(summary_lines, "- **Observations:**     *Error retrieving ($e)*") end
+            try push!(summary_lines, @sprintf("- **Deviance:**         `%.4f`", deviance(model))) catch e push!(summary_lines, "- **Deviance:**         *Error retrieving ($e)*") end
+            # Calculate nulldeviance for R² calculation
+            null_dev = NaN
+            try null_dev = nulldeviance(model) catch e push!(summary_lines, "- **Null Deviance:**    *Error retrieving ($e)*") end
+            if !isnan(null_dev) push!(summary_lines, @sprintf("- **Null Deviance:**    `%.4f`", null_dev)) end
+
+            try push!(summary_lines, @sprintf("- **Log-Likelihood:**   `%.4f`", loglikelihood(model))) catch e push!(summary_lines, "- **Log-Likelihood:**   *Error retrieving ($e)*") end
+            try push!(summary_lines, @sprintf("- **AIC:**              `%.4f`", aic(model))) catch e push!(summary_lines, "- **AIC:**              *Error retrieving ($e)*") end
+            try push!(summary_lines, @sprintf("- **BIC:**              `%.4f`", bic(model))) catch e push!(summary_lines, "- **BIC:**              *Error retrieving ($e)*") end
+            # Calculate McFadden's R² manually
+            r_squared_mcfadden = NaN
+            if !isnan(null_dev) && null_dev != 0
+                try r_squared_mcfadden = 1 - deviance(model) / null_dev catch e push!(summary_lines, "- **McFadden's R²:**    *Error calculating ($e)*") end
+            elseif null_dev == 0
+                 push!(summary_lines, "- **McFadden's R²:**    *Cannot calculate (Null Deviance is zero)*")
+            end
+            if !isnan(r_squared_mcfadden) push!(summary_lines, @sprintf("- **McFadden's R²:**    `%.4f`", r_squared_mcfadden)) end
+            push!(summary_lines, "") # Blank line for spacing
+
+            # Add coefficients table in a code block
+            ct = coeftable(model)
+            push!(summary_lines, "## Coefficients\n")
+            push!(summary_lines, "```")
+            push!(summary_lines, string(ct)) # Convert CoefTable to string
+            push!(summary_lines, "```")
+            
+            # Join lines for the final string
+            summary_str = join(summary_lines, "\n")
+
+            # Define output filename with .md extension
             output_filename = joinpath(summaries_dir, string(model_name) * "_summary.md")
 
             open(output_filename, "w") do file

@@ -11,7 +11,7 @@ map_law_cat(law_cat_cd::String)::String = @match law_cat_cd begin
 end
 
 function filter_crime_types(row::TableTransforms.CTableRow)::Bool
-    return row."crime_cat" in CRIME_CATEGORIES
+    return row."crime" in CRIME_CATEGORIES
 end
 
 function filter_bad_locations(row::TableTransforms.CTableRow)::Bool
@@ -33,4 +33,3 @@ function map_crime_cat(ofns_desc::String, law_cat::String)::String
         _ => string(ofns_desc)
     end
 end
-
