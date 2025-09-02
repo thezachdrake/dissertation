@@ -1,4 +1,4 @@
 .env
 .vscode
-/data
-/sources
+data/
+sources/
