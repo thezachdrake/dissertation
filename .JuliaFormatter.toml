@@ -1,0 +1,62 @@
+# JuliaFormatter configuration for Dissertation project
+# This helps with consistent code formatting and assists the Language Server
+
+# Use BlueStyle as the base (conservative, widely-used style)
+style = "blue"
+
+# Line length to match your Zed settings
+margin = 92
+
+# Indentation
+indent = 4
+
+# Always use 4 spaces, never tabs
+always_use_return = true
+
+# Format docstrings
+format_docstrings = true
+
+# Align assignment operators for clarity
+align_assignment = true
+
+# Align conditional operators
+align_conditional = true
+
+# Align pair arrows in NamedTuples
+align_pair_arrow = true
+
+# Align matrix rows for readability
+align_matrix = true
+
+# Remove trailing whitespace
+remove_trailing_whitespace = true
+
+# Remove trailing commas
+trailing_comma = false
+
+# Always add a newline at the end of the file
+trailing_newline = true
+
+# Don't automatically fix style issues, just format
+annotate_unformatted_files = false
+
+# Normalize line endings to Unix style (LF)
+normalize_line_endings = "unix"
+
+# Keep vertical formatting when it improves readability
+always_for_in = false
+whitespace_in_kwargs = true
+whitespace_ops_in_indices = true
+
+# Import/using statements formatting
+separate_kwargs_with_semicolon = true
+
+# Type annotation spacing
+whitespace_typedefs = true
+
+# Preserve user's explicit line breaks in function calls when they aid readability
+short_to_long_function_def = false
+
+# Don't automatically convert between import styles
+import_to_using = false
+pipe_to_function_call = false
