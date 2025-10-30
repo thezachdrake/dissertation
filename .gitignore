@@ -2,3 +2,7 @@
 .vscode
 data/
 sources/
+.julia/
+.direnv
+.zed
+.envrc
