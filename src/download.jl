@@ -1,48 +1,3 @@
-"""
-download.jl
-
-Data download functions for the dissertation analysis.
-These functions fetch data from NYC Open Data and Google Places API.
-"""
-
-"""
-    download_crime_data()::Nothing
-
-Download crime incident and arrest data from NYC Open Data SODA API.
-
-This function retrieves the crime data described in the Methods section of the paper.
-The data comes from NYC Open Data's publicly available datasets, which are updated
-quarterly. As noted in the paper, these datasets are used because they are "rich in
-detail and classification" and "incredibly large," providing the statistical power
-needed to detect relationships between facility types and crime concentration.
-
-The function downloads both incidents (reported crimes) and arrests to enable
-comparison for Research Question 3 about law enforcement activity patterns.
-All data is filtered to Manhattan borough to leverage its high crime-to-street-segment
-ratio (almost 7:1) mentioned in the paper.
-
-Requires:
-
-  - SODA_KEY_ID environment variable for NYC Open Data API Key ID
-  - SODA_KEY_SECRET environment variable for NYC Open Data API Key Secret
-
-Downloads:
-
-  - incidents.geojson: Crime complaints/incidents in Manhattan
-  - arrests.geojson: Arrest records in Manhattan
-
-Data Fields Retrieved:
-
-  - Incidents: complaint number, offense description, law category, borough,
-    location type, premise type, geocoded coordinates
-  - Arrests: arrest key, offense description, law category, borough, geocoded coordinates
-
-Notes:
-
-  - Data is pre-geocoded by NYC to street segment centers
-  - Only records with valid geocoding are retrieved
-  - Manhattan filter applied at API level for efficiency
-"""
 function download_crime_data()::Nothing
     @info "Downloading crime data from NYC Open Data..."
 
@@ -53,7 +8,7 @@ function download_crime_data()::Nothing
     @info "Fetching crime incidents..."
     incidents_response = HTTP.get(
         "https://data.cityofnewyork.us/api/v3/views/5uac-w243/query.geojson";
-        basicauth = (ENV["SODA_KEY_ID"], ENV["SODA_KEY_SECRET"]),
+        headers = ["X-App-Token" => ENV["SODA_APP_TOKEN"]],
         query = [
             "\$limit" => 10000000,
             "\$select" => "cmplnt_num,ofns_desc,law_cat_cd,boro_nm,loc_of_occur_desc,prem_typ_desc,geocoded_column",
@@ -69,7 +24,7 @@ function download_crime_data()::Nothing
     @info "Fetching arrest data..."
     arrests_response = HTTP.get(
         "https://data.cityofnewyork.us/api/v3/views/uip8-fykc/query.geojson";
-        basicauth = (ENV["SODA_KEY_ID"], ENV["SODA_KEY_SECRET"]),
+        headers = ["X-App-Token" => ENV["SODA_APP_TOKEN"]],
         query = [
             "\$limit" => 10000000,
             "\$select" => "arrest_key,ofns_desc,law_cat_cd,arrest_boro,geocoded_column",
@@ -84,44 +39,6 @@ function download_crime_data()::Nothing
     @info "Crime data download complete"
 end
 
-"""
-    download_street_data()::Nothing
-
-Download NYC street centerline data from NYC Open Data SODA API.
-
-This function retrieves the street segment data that serves as the unit of analysis
-for the dissertation. As described in the Methods section, street segments are
-defined as "both sides of a street between two intersections," following the
-standard definition in crime and place literature (Weisburd et al., 2012).
-
-The street centerlines provide the spatial framework for aggregating crimes and
-facilities. Manhattan contains 9,347 street segments after filtering, which forms
-the analytical dataset. Each segment has a unique identifier and geometry for
-spatial matching operations.
-
-Requires:
-
-  - SODA_KEY_ID environment variable for NYC Open Data API Key ID
-  - SODA_KEY_SECRET environment variable for NYC Open Data API Key Secret
-
-Downloads:
-
-  - streets.geojson: Street centerlines for all NYC boroughs
-
-Data Characteristics:
-
-  - Contains unique record for each street segment
-  - Includes PHYSICALID as unique identifier
-  - Provides FULL_STREE as human-readable street name
-  - Geometry encoded as LineString features
-  - Classification field distinguishes streets from highways, alleys, etc.
-
-Processing Notes:
-
-  - Raw data includes all boroughs (filtered to Manhattan later)
-  - Street type filtering removes non-street features
-  - Used for K-nearest neighbor matching with crime/place data
-"""
 function download_street_data()::Nothing
     @info "Downloading street data from NYC Open Data..."
 
@@ -129,7 +46,7 @@ function download_street_data()::Nothing
 
     response = HTTP.get(
         "https://data.cityofnewyork.us/api/v3/views/inkn-q76z/query.geojson";
-        basicauth = (ENV["SODA_KEY_ID"], ENV["SODA_KEY_SECRET"]),
+        headers = ["X-App-Token" => ENV["SODA_APP_TOKEN"]],
         query = ["\$limit" => 100000000]
     )
 
@@ -140,31 +57,6 @@ function download_street_data()::Nothing
     @info "Street data download complete"
 end
 
-"""
-    download_place_data()
-
-Download place data using Google Places API with systematic spatial sampling.
-Creates a grid of search points across Manhattan and queries nearby places.
-
-Requires:
-
-  - GOOGLE_MAPS_KEY environment variable for Google Places API access
-  - SODA_KEY_ID environment variable for NYC Open Data API Key ID
-  - SODA_KEY_SECRET environment variable for NYC Open Data API Key Secret
-
-Downloads:
-
-  - places/*.json: Individual JSON files for each place found
-
-Process:
-
- 1. Download Manhattan boundary from NYC Open Data
- 2. Generate systematic sampling grid across Manhattan
- 3. Query Google Places API for each grid point
- 4. Save each unique place as a separate JSON file
-
-Note: This function implements rate limiting (250ms delay) to respect API limits.
-"""
 function download_place_data(n_samples::Int = Nothing)
     @info "Downloading place data using Google Places API..."
 
@@ -172,7 +64,7 @@ function download_place_data(n_samples::Int = Nothing)
     @info "Getting Manhattan boundary from NYC Open Data..."
     manhattan_response = HTTP.get(
         "https://data.cityofnewyork.us/api/v3/views/gthc-hcne/query.geojson";
-        basicauth = (ENV["SODA_KEY_ID"], ENV["SODA_KEY_SECRET"])
+        headers = ["X-App-Token" => ENV["SODA_APP_TOKEN"]]
     )
 
     manhattan_geotable = GeoIO.load(String(manhattan_response.body))

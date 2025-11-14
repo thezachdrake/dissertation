@@ -47,6 +47,8 @@
             )}";
             JULIA_PROJECT = "@.";
             JULIA_DEPOT_PATH = ".julia";
+            # Add Julia project binaries to PATH
+            PATH = "$PWD/.julia/bin:$PATH";
           };
 
           shellHook = ''
@@ -54,6 +56,9 @@
             echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
             echo "Julia project: $JULIA_PROJECT"
             echo "Julia depot: $JULIA_DEPOT_PATH"
+
+            # Add Julia project binaries to PATH (e.g., jlfmt from JuliaFormatter)
+            export PATH="$PWD/.julia/bin:$PATH"
 
             # Create local Julia depot directory if it doesn't exist
             mkdir -p .julia

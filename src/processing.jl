@@ -1,13 +1,3 @@
-"""
-Load NYPD incident data and map to our 4 crime categories.
-
-Takes the raw complaint data and groups crimes by opportunity type
-(violence, larceny, burglary, drugs) instead of legal definitions.
-Only keeps Manhattan incidents with valid location data.
-
-Returns a GeoTable with id, offense description, crime category,
-law category, borough, and geometry.
-"""
 function process_incident_data()::GeoTable
     @info "Processing crime incident data..."
 
@@ -65,7 +55,9 @@ function process_incident_data()::GeoTable
 
     # Convert back to GeoTable
     if "geometry" in names(incident_data)
-        incident_geo = georef(incident_data, incident_data[!, :geometry])
+        geometries = incident_data[!, :geometry]
+        data_without_geom = select(incident_data, Not(:geometry))
+        incident_geo = georef(data_without_geom, geometries)
     else
         error("No geometry column found in incident data")
     end
@@ -73,16 +65,6 @@ function process_incident_data()::GeoTable
     return incident_geo
 end
 
-"""
-Load NYPD arrest data using the same crime categories as incidents.
-
-Arrests are our proxy for police activity - where cops are making
-collars vs where crimes are reported. Uses the same 4-category
-system so we can compare arrest patterns to incident patterns.
-
-Returns a GeoTable with arrest key, offense, crime category,
-law category, borough, and location.
-"""
 function process_arrest_data()::GeoTable
     @info "Processing police arrest data..."
 
@@ -97,7 +79,6 @@ function process_arrest_data()::GeoTable
 
     # Convert to DataFrame for processing
     arrests_df = DataFrame(arrests)
-
     # Standardize borough names - arrests use 'arrest_boro' vs incidents' 'boro_nm'
     if "arrest_boro" in names(arrests_df)
         arrests_df[!, :boro_nm] =
@@ -123,11 +104,13 @@ function process_arrest_data()::GeoTable
         arrests_df[!, :crime] = fill("", nrow(arrests_df))
     end
 
+	@info names(arrests_df)
+
     # Filter for valid Manhattan arrest data
     arrests_filtered = filter(
         row ->
             !isempty(row.crime) &&  # Only include crimes in our 4 categories
-                !ismissing(row.geocoded_column) &&
+                !ismissing(row.geometry) &&
                 row.boro_nm == "MANHATTAN",
         arrests_df
     )
@@ -148,7 +131,9 @@ function process_arrest_data()::GeoTable
 
     # Convert back to GeoTable
     if "geometry" in names(arrest_data)
-        arrest_geo = georef(arrest_data, arrest_data[!, :geometry])
+        geometries = arrest_data[!, :geometry]
+        data_without_geom = select(arrest_data, Not(:geometry))
+        arrest_geo = georef(data_without_geom, geometries)
     else
         error("No geometry column found in arrest data")
     end
@@ -156,11 +141,6 @@ function process_arrest_data()::GeoTable
     return arrest_geo
 end
 
-"""
-Convert NYPD's letter codes to full law category names.
-
-F -> FELONY, M -> MISDEMEANOR, V/I -> VIOLATION
-"""
 function map_law_category(law_cat_cd::String)::String
     law_cat_upper = uppercase(string(law_cat_cd))
 
@@ -177,13 +157,10 @@ function map_law_category(law_cat_cd::String)::String
     end
 end
 
-"""
-Map NYPD's detailed offense descriptions to our 4 crime types.
+function map_law_category(law_cat_cd::Missing)::String
+	return ""
+end 
 
-Looks for keywords in the offense text to classify as:
-VIOLENCE (assault, robbery, etc), LARCENY (theft),
-BURGLARY, or DRUGS.
-"""
 function map_crime_category(offense_desc::String, law_category::String)
     # Handle missing/null values - return empty string for filtering
     if ismissing(offense_desc) || isempty(offense_desc)
@@ -216,16 +193,6 @@ function map_crime_category(offense_desc::String, law_category::String)
     end
 end
 
-"""
-Load place data from Google Places API results.
-
-Reads all the JSON files we got from querying Google Places,
-extracts location and type info, and maps Google's 276 place
-types down to our 17 categories (e.g., "bar" and "pub" both
-become FOOD_DRINK).
-
-Returns a GeoTable with place ID, name, type, category, and location.
-"""
 function process_place_data()::GeoTable
     @info "Processing place data..."
 
@@ -310,7 +277,7 @@ function process_place_data()::GeoTable
     # Convert to GeoTable with proper coordinate system
     if nrow(places_data) > 0
         points = [
-            Point(LatLon{WGS84Latest}(row.lat, row.lon)) for row in eachrow(places_data)
+            Meshes.Point(LatLon{WGS84Latest}(row.lat, row.lon)) for row in eachrow(places_data)
         ]
         places_geo = georef(places_data, points)
 
@@ -321,12 +288,6 @@ function process_place_data()::GeoTable
     end
 end
 
-"""
-Map Google's place types to our 17 categories.
-
-Takes specific types like "bar", "restaurant", "coffee_shop" and
-groups them into broader categories like FOOD_DRINK.
-"""
 function map_place_category(primary_type::String)
     # Handle missing/null values
     if ismissing(primary_type) || isempty(primary_type)
@@ -657,12 +618,6 @@ function map_place_category(primary_type::String)
     end
 end
 
-"""
-Load NYC street data and filter to Manhattan only.
-
-Gets street segments with IDs and names that we'll use to
-aggregate crimes and places to street level.
-"""
 function process_street_data()
     @info "Processing street data..."
 
@@ -678,21 +633,22 @@ function process_street_data()
     streets_df = DataFrame(streets)
 
     # Filter for Manhattan streets (BoroCode == 1)
-    manhattan_streets_df = filter(row -> row.BoroCode == 1, streets_df)
+    manhattan_streets_df = filter(row -> row.boroughcode == "1", streets_df)
     @info "Filtered to $(nrow(manhattan_streets_df)) Manhattan street segments"
 
     # Clean and standardize identifiers
     # Use PHYSICALID as primary identifier, with FULL_STREE as readable name
-    manhattan_streets_df[!, :street_id] = string.(manhattan_streets_df.PHYSICALID)
+    manhattan_streets_df[!, :street_id] = string.(manhattan_streets_df.physicalid)
     manhattan_streets_df[!, :street_name] =
-        coalesce.(manhattan_streets_df.FULL_STREE, "Unknown Street")
+        coalesce.(manhattan_streets_df.full_street_name, "Unknown Street")
 
     # Get corresponding geometries
-    manhattan_indices = findall(streets.BoroCode .== 1)
+    manhattan_indices = findall(streets.boroughcode .== "1")
     manhattan_geometries = streets.geometry[manhattan_indices]
 
-    # Convert back to GeoTable
-    manhattan_geo = georef(manhattan_streets_df, manhattan_geometries)
+    # Convert back to GeoTable (remove geometry column from dataframe first)
+    data_without_geom = select(manhattan_streets_df, Not(:geometry))
+    manhattan_geo = georef(data_without_geom, manhattan_geometries)
 
     @info "Created GeoTable with $(nrow(manhattan_geo)) Manhattan street segments"
 

@@ -19,18 +19,17 @@ using CairoMakie, Colors, ColorSchemes
 using FileIO, Glob, DotEnv, Unitful
 
 if isfile(".env")
-    DotEnv.config()
+	DotEnv.load!()
 end
 
 DATA_DIR = get(ENV, "DATA_DIR", "data")
 OUTPUT_DIR = get(ENV, "OUTPUT_DIR", "output")
-FILES::String =
-    function set_output_dir(dir::String)
-        global OUTPUT_DIR = dir
-        mkpath(dir)
-        @info "Output directory set to: $dir"
-        return dir
-    end
+function set_output_dir(dir::String)
+    global OUTPUT_DIR = dir
+    mkpath(dir)
+    @info "Output directory set to: $dir"
+    return dir
+end
 
 function set_data_dir(dir::String)
     global DATA_DIR = dir
@@ -60,6 +59,8 @@ include("modeling.jl")         # RQ2&3: Logistic regression models
 include("output.jl")           # Tables, figures, summary reports
 
 # Orchestration layer - workflow management
-include("pipeline.jl")         # Main run() function coordinating all analyses
+include("run.jl") # Main run() function coordinating all analyses
+
+export run
 
 end # module Dissertation

@@ -6,3 +6,7 @@ sources/
 .direnv
 .zed
 .envrc
+.nvim/
+.cl*
+flake.lock
+*.conform*
