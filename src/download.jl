@@ -136,7 +136,7 @@ function download_place_data(n_samples::Int = Nothing)
                     # Only save if we haven't seen this place before
                     if !isfile(filename)
                         open(filename, "w") do f
-                            JSON.print(f, place)
+                            return JSON.print(f, place)
                         end
                         places_found += 1
                     end

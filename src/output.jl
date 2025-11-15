@@ -86,7 +86,9 @@ function save_comprehensive_results(
     save_feature_engineering_report(incident_features, arrest_features, run_dir)
 
     # Save target variable analysis
-    save_target_variable_analysis(incident_features, arrest_features, target_methods, run_dir)
+    save_target_variable_analysis(
+        incident_features, arrest_features, target_methods, run_dir
+    )
 
     # Save model diagnostics
     save_model_diagnostics(incident_models, arrest_models, run_dir)
@@ -115,9 +117,7 @@ Shows street counts, crime concentration stats, place type distributions, etc.
 Basically documents what we built from the raw data.
 """
 function save_feature_engineering_report(
-    incident_features::DataFrame,
-    arrest_features::DataFrame,
-    output_dir::String
+    incident_features::DataFrame, arrest_features::DataFrame, output_dir::String
 )
     report_path = joinpath(output_dir, "reports", "feature_engineering.md")
 
@@ -139,24 +139,41 @@ function save_feature_engineering_report(
         println(io, "\n## Feature Categories")
 
         # Count different feature types
-        place_cols = [col for col in names(incident_features)
-                     if !startswith(String(col), "crime_") &&
-                        !startswith(String(col), "high_") &&
-                        !startswith(String(col), "interact_") &&
-                        col ∉ [:street_id, :street_name, :total_crime, :total_places,
-                               :crime_place_ratio, :commercial_activity]]
+        place_cols = [
+            col for col in names(incident_features) if !startswith(String(col), "crime_") &&
+            !startswith(String(col), "high_") &&
+            !startswith(String(col), "interact_") &&
+            col ∉ [
+                :street_id,
+                :street_name,
+                :total_crime,
+                :total_places,
+                :crime_place_ratio,
+                :commercial_activity
+            ]
+        ]
 
-        crime_cols = [col for col in names(incident_features) if startswith(String(col), "crime_")]
-        target_cols = [col for col in names(incident_features) if startswith(String(col), "high_")]
-        interact_cols = [col for col in names(incident_features) if startswith(String(col), "interact_")]
+        crime_cols = [
+            col for col in names(incident_features) if startswith(String(col), "crime_")
+        ]
+        target_cols = [
+            col for col in names(incident_features) if startswith(String(col), "high_")
+        ]
+        interact_cols = [
+            col for col in names(incident_features) if startswith(String(col), "interact_")
+        ]
 
         println(io, "\n### Feature Counts")
         println(io, "| Category | Incident Features | Arrest Features |")
         println(io, "|----------|------------------|-----------------|")
         println(io, "| Place Types | $(length(place_cols)) | $(length(place_cols)) |")
         println(io, "| Crime Categories | $(length(crime_cols)) | $(length(crime_cols)) |")
-        println(io, "| Target Variables | $(length(target_cols)) | $(length(target_cols)) |")
-        println(io, "| Interactions | $(length(interact_cols)) | $(length(interact_cols)) |")
+        println(
+            io, "| Target Variables | $(length(target_cols)) | $(length(target_cols)) |"
+        )
+        println(
+            io, "| Interactions | $(length(interact_cols)) | $(length(interact_cols)) |"
+        )
 
         # Crime concentration statistics
         println(io, "\n## Crime Concentration")
@@ -169,10 +186,12 @@ function save_feature_engineering_report(
             if :total_crime in names(df)
                 total_streets = nrow(df)
                 streets_with_crime = sum(df.total_crime .> 0)
-                crime_concentration = round(100 * streets_with_crime / total_streets, digits=1)
+                crime_concentration = round(
+                    100 * streets_with_crime / total_streets; digits = 1
+                )
 
                 # Calculate concentration metrics
-                sorted_crime = sort(df.total_crime, rev=true)
+                sorted_crime = sort(df.total_crime; rev = true)
                 total_crime = sum(sorted_crime)
 
                 if total_crime > 0
@@ -183,11 +202,14 @@ function save_feature_engineering_report(
                     pct_50_idx = findfirst(x -> x >= 0.50 * total_crime, cumsum_crime)
                     pct_80_idx = findfirst(x -> x >= 0.80 * total_crime, cumsum_crime)
 
-                    pct_25_streets = round(100 * pct_25_idx / total_streets, digits=1)
-                    pct_50_streets = round(100 * pct_50_idx / total_streets, digits=1)
-                    pct_80_streets = round(100 * pct_80_idx / total_streets, digits=1)
+                    pct_25_streets = round(100 * pct_25_idx / total_streets; digits = 1)
+                    pct_50_streets = round(100 * pct_50_idx / total_streets; digits = 1)
+                    pct_80_streets = round(100 * pct_80_idx / total_streets; digits = 1)
 
-                    println(io, "- Streets with any crime: $streets_with_crime ($crime_concentration%)")
+                    println(
+                        io,
+                        "- Streets with any crime: $streets_with_crime ($crime_concentration%)"
+                    )
                     println(io, "- 25% of crime in: $pct_25_streets% of streets")
                     println(io, "- 50% of crime in: $pct_50_streets% of streets")
                     println(io, "- 80% of crime in: $pct_80_streets% of streets")
@@ -204,7 +226,7 @@ function save_feature_engineering_report(
             if col in names(incident_features)
                 values = incident_features[!, col]
                 streets_with = sum(values .> 0)
-                mean_count = round(mean(values[values .> 0]), digits=2)
+                mean_count = round(mean(values[values .> 0]); digits = 2)
                 max_count = maximum(values)
 
                 println(io, "| $col | $streets_with | $mean_count | $max_count |")
@@ -249,7 +271,8 @@ function save_target_variable_analysis(
         for crime_cat in crime_categories
             println(io, "\n## $crime_cat Crime")
 
-            for (df_name, df) in [("Incident", incident_features), ("Arrest", arrest_features)]
+            for (df_name, df) in
+                [("Incident", incident_features), ("Arrest", arrest_features)]
                 crime_col = Symbol("crime_$crime_cat")
 
                 if crime_col in names(df)
@@ -264,23 +287,36 @@ function save_target_variable_analysis(
 
                     # Target variable distributions
                     println(io, "\n#### Target Variable Thresholds")
-                    println(io, "| Method | Threshold | Streets Above | % Streets | % Crime Captured |")
-                    println(io, "|--------|-----------|---------------|-----------|------------------|")
+                    println(
+                        io,
+                        "| Method | Threshold | Streets Above | % Streets | % Crime Captured |"
+                    )
+                    println(
+                        io,
+                        "|--------|-----------|---------------|-----------|------------------|"
+                    )
 
                     for method in target_methods
                         target_col = Symbol("high_$(lowercase(crime_cat))_$method")
                         if target_col in names(df)
                             n_high = sum(df[!, target_col])
-                            pct_streets = round(100 * n_high / nrow(df), digits=1)
+                            pct_streets = round(100 * n_high / nrow(df); digits = 1)
 
                             # Calculate crime captured
                             crime_in_high = sum(crime_values[df[!, target_col]])
-                            pct_crime = total_crime > 0 ? round(100 * crime_in_high / total_crime, digits=1) : 0.0
+                            pct_crime = if total_crime > 0
+                                round(100 * crime_in_high / total_crime; digits = 1)
+                            else
+                                0.0
+                            end
 
                             # Find threshold value
-                            threshold = minimum(crime_values[df[!, target_col]], init=0)
+                            threshold = minimum(crime_values[df[!, target_col]]; init = 0)
 
-                            println(io, "| $method | $threshold | $n_high | $pct_streets% | $pct_crime% |")
+                            println(
+                                io,
+                                "| $method | $threshold | $n_high | $pct_streets% | $pct_crime% |"
+                            )
                         end
                     end
                 end
@@ -297,9 +333,7 @@ Dump all the model stats - AIC, BIC, R-squared, the works.
 Creates both a CSV for analysis and a markdown report for reading.
 """
 function save_model_diagnostics(
-    incident_models::Dict,
-    arrest_models::Dict,
-    output_dir::String
+    incident_models::Dict, arrest_models::Dict, output_dir::String
 )
     # Create diagnostics dataframe
     diagnostics = DataFrame()
@@ -321,19 +355,22 @@ function save_model_diagnostics(
             lr_stat = null_deviance - model_deviance
             lr_pvalue = ccdf(Chisq(n_params - 1), lr_stat)
 
-            push!(diagnostics, (
-                model_type = model_type,
-                target = String(target_name),
-                n_observations = n_obs,
-                n_parameters = n_params,
-                aic = model_aic,
-                bic = model_bic,
-                deviance = model_deviance,
-                null_deviance = null_deviance,
-                mcfadden_r2 = mcfadden_r2,
-                lr_statistic = lr_stat,
-                lr_pvalue = lr_pvalue
-            ))
+            push!(
+                diagnostics,
+                (
+                    model_type = model_type,
+                    target = String(target_name),
+                    n_observations = n_obs,
+                    n_parameters = n_params,
+                    aic = model_aic,
+                    bic = model_bic,
+                    deviance = model_deviance,
+                    null_deviance = null_deviance,
+                    mcfadden_r2 = mcfadden_r2,
+                    lr_statistic = lr_stat,
+                    lr_pvalue = lr_pvalue
+                )
+            )
         end
     end
 
@@ -354,17 +391,27 @@ function save_model_diagnostics(
             if nrow(type_diagnostics) > 0
                 println(io, "\n### Summary Statistics")
                 println(io, "- Total models: $(nrow(type_diagnostics))")
-                println(io, "- Mean McFadden R²: $(round(mean(type_diagnostics.mcfadden_r2), digits=4))")
+                println(
+                    io,
+                    "- Mean McFadden R²: $(round(mean(type_diagnostics.mcfadden_r2), digits=4))"
+                )
                 println(io, "- Mean AIC: $(round(mean(type_diagnostics.aic), digits=2))")
 
                 println(io, "\n### Model Performance Table")
-                println(io, "| Target | N | Parameters | AIC | BIC | McFadden R² | LR p-value |")
-                println(io, "|--------|---|------------|-----|-----|-------------|------------|")
+                println(
+                    io, "| Target | N | Parameters | AIC | BIC | McFadden R² | LR p-value |"
+                )
+                println(
+                    io, "|--------|---|------------|-----|-----|-------------|------------|"
+                )
 
                 for row in eachrow(type_diagnostics)
-                    println(io, "| $(row.target) | $(row.n_observations) | $(row.n_parameters) | " *
-                           "$(round(row.aic, digits=1)) | $(round(row.bic, digits=1)) | " *
-                           "$(round(row.mcfadden_r2, digits=4)) | $(round(row.lr_pvalue, digits=4)) |")
+                    println(
+                        io,
+                        "| $(row.target) | $(row.n_observations) | $(row.n_parameters) | " *
+                        "$(round(row.aic, digits=1)) | $(round(row.bic, digits=1)) | " *
+                        "$(round(row.mcfadden_r2, digits=4)) | $(round(row.lr_pvalue, digits=4)) |"
+                    )
                 end
             end
         end
@@ -385,19 +432,31 @@ function save_interaction_analysis(interaction_results, output_dir::String)
     open(report_path, "w") do io
         println(io, "# Routine Activities Theory - Interaction Analysis")
         println(io, "\n## Three-Way Model Comparison")
-        println(io, "Comparing: Base (counts only) vs Interactions-Only vs Full (counts + interactions)")
+        println(
+            io,
+            "Comparing: Base (counts only) vs Interactions-Only vs Full (counts + interactions)"
+        )
 
         if haskey(interaction_results, :model_comparisons)
             comparisons = interaction_results.model_comparisons
 
             println(io, "\n### Model Performance Summary")
-            println(io, "| Crime Type | Model Type | Best Model | Base AIC | Interact-Only AIC | Full AIC |")
-            println(io, "|------------|------------|------------|----------|-------------------|----------|")
+            println(
+                io,
+                "| Crime Type | Model Type | Best Model | Base AIC | Interact-Only AIC | Full AIC |"
+            )
+            println(
+                io,
+                "|------------|------------|------------|----------|-------------------|----------|"
+            )
 
             for row in eachrow(comparisons)
-                println(io, "| $(row.target) | $(row.model_type) | $(row.best_model) | " *
-                       "$(round(row.base_aic, digits=1)) | $(round(row.interact_only_aic, digits=1)) | " *
-                       "$(round(row.full_aic, digits=1)) |")
+                println(
+                    io,
+                    "| $(row.target) | $(row.model_type) | $(row.best_model) | " *
+                    "$(round(row.base_aic, digits=1)) | $(round(row.interact_only_aic, digits=1)) | " *
+                    "$(round(row.full_aic, digits=1)) |"
+                )
             end
 
             # Save comparison data
@@ -413,15 +472,22 @@ function save_interaction_analysis(interaction_results, output_dir::String)
             if nrow(interactions) > 0
                 println(io, "\n## Significant Interaction Terms")
                 println(io, "\n### Top 20 Most Significant Interactions")
-                println(io, "| Interaction | Coefficient | P-value | Model | Interpretation |")
-                println(io, "|-------------|-------------|---------|-------|----------------|")
+                println(
+                    io, "| Interaction | Coefficient | P-value | Model | Interpretation |"
+                )
+                println(
+                    io, "|-------------|-------------|---------|-------|----------------|"
+                )
 
                 # Sort by p-value and show top 20
                 sorted_interactions = sort(interactions, :p_value)
                 for row in eachrow(first(sorted_interactions, 20))
-                    println(io, "| $(row.interaction_term) | $(round(row.coefficient, digits=3)) | " *
-                           "$(round(row.p_value, digits=4)) | $(row.model_type)/$(row.target) | " *
-                           "$(row.interpretation) |")
+                    println(
+                        io,
+                        "| $(row.interaction_term) | $(round(row.coefficient, digits=3)) | " *
+                        "$(round(row.p_value, digits=4)) | $(row.model_type)/$(row.target) | " *
+                        "$(row.interpretation) |"
+                    )
                 end
 
                 # Save all interactions
@@ -470,7 +536,10 @@ function save_pca_analysis(pca_results, output_dir::String)
         if haskey(pca_results, :n_components)
             println(io, "\n### PCA Summary")
             println(io, "- Components retained: $(pca_results.n_components)")
-            println(io, "- Variance explained: $(round(pca_results.variance_explained * 100, digits=1))%")
+            println(
+                io,
+                "- Variance explained: $(round(pca_results.variance_explained * 100, digits=1))%"
+            )
         end
 
         if haskey(pca_results, :component_loadings)
@@ -478,14 +547,14 @@ function save_pca_analysis(pca_results, output_dir::String)
 
             println(io, "\n### Top Loadings for First 5 Components")
 
-            for i in 1:min(5, size(loadings, 2))
+            for i = 1:min(5, size(loadings, 2))
                 println(io, "\n#### PC$i")
 
                 # Get top 10 loadings for this component
                 comp_loadings = loadings[:, i]
-                sorted_idx = sortperm(abs.(comp_loadings), rev=true)
+                sorted_idx = sortperm(abs.(comp_loadings); rev = true)
 
-                for j in 1:min(10, length(sorted_idx))
+                for j = 1:min(10, length(sorted_idx))
                     idx = sorted_idx[j]
                     if haskey(pca_results, :place_types)
                         place_type = pca_results.place_types[idx]
@@ -505,8 +574,11 @@ function save_pca_analysis(pca_results, output_dir::String)
             println(io, "|--------|----------------|-----------|-------------|")
 
             for row in eachrow(comparison)
-                println(io, "| $(row.metric) | $(round(row.category_value, digits=3)) | " *
-                       "$(round(row.pca_value, digits=3)) | $(round(row.improvement, digits=3)) |")
+                println(
+                    io,
+                    "| $(row.metric) | $(round(row.category_value, digits=3)) | " *
+                    "$(round(row.pca_value, digits=3)) | $(round(row.improvement, digits=3)) |"
+                )
             end
         end
     end
@@ -546,14 +618,22 @@ function generate_master_report(output_dir::String, timestamp::String)
 
         # Read and summarize key metrics from saved CSVs
         if isfile(joinpath(output_dir, "diagnostics", "model_diagnostics.csv"))
-            diagnostics = CSV.read(joinpath(output_dir, "diagnostics", "model_diagnostics.csv"), DataFrame)
+            diagnostics = CSV.read(
+                joinpath(output_dir, "diagnostics", "model_diagnostics.csv"), DataFrame
+            )
 
             println(io, "\n### Model Performance")
             println(io, "- Total models fitted: $(nrow(diagnostics))")
-            println(io, "- Average McFadden R²: $(round(mean(diagnostics.mcfadden_r2), digits=4))")
+            println(
+                io,
+                "- Average McFadden R²: $(round(mean(diagnostics.mcfadden_r2), digits=4))"
+            )
 
             best_model = diagnostics[argmax(diagnostics.mcfadden_r2), :]
-            println(io, "- Best performing model: $(best_model.target) ($(best_model.model_type))")
+            println(
+                io,
+                "- Best performing model: $(best_model.target) ($(best_model.model_type))"
+            )
             println(io, "  - McFadden R²: $(round(best_model.mcfadden_r2, digits=4))")
         end
 
@@ -585,15 +665,22 @@ function generate_master_report(output_dir::String, timestamp::String)
         println(io, "- [Model Diagnostics](diagnostics/model_diagnostics.csv)")
 
         if isfile(joinpath(output_dir, "comparisons", "interaction_model_comparison.csv"))
-            println(io, "- [Interaction Model Comparison](comparisons/interaction_model_comparison.csv)")
+            println(
+                io,
+                "- [Interaction Model Comparison](comparisons/interaction_model_comparison.csv)"
+            )
         end
 
         if isfile(joinpath(output_dir, "comparisons", "significant_interactions.csv"))
-            println(io, "- [Significant Interactions](comparisons/significant_interactions.csv)")
+            println(
+                io, "- [Significant Interactions](comparisons/significant_interactions.csv)"
+            )
         end
 
         println(io, "\n---")
-        println(io, "\n*Report generated automatically by dissertation analysis pipeline*")
+        return println(
+            io, "\n*Report generated automatically by dissertation analysis pipeline*"
+        )
     end
 
     @info "Master report generated at: $master_path"
@@ -607,12 +694,19 @@ and basic distribution stats.
 """
 function save_place_type_summary(features::DataFrame, output_dir::String)
     # Identify place columns
-    place_cols = [col for col in names(features)
-                 if !startswith(String(col), "crime_") &&
-                    !startswith(String(col), "high_") &&
-                    !startswith(String(col), "interact_") &&
-                    col ∉ [:street_id, :street_name, :total_crime, :total_places,
-                           :crime_place_ratio, :commercial_activity]]
+    place_cols = [
+        col for col in names(features) if !startswith(String(col), "crime_") &&
+        !startswith(String(col), "high_") &&
+        !startswith(String(col), "interact_") &&
+        col ∉ [
+            :street_id,
+            :street_name,
+            :total_crime,
+            :total_places,
+            :crime_place_ratio,
+            :commercial_activity
+        ]
+    ]
 
     # Create summary statistics
     summary_df = DataFrame()
@@ -621,21 +715,26 @@ function save_place_type_summary(features::DataFrame, output_dir::String)
         if col in names(features) && eltype(features[!, col]) <: Number
             values = features[!, col]
 
-            push!(summary_df, (
-                place_type = String(col),
-                total_count = sum(values),
-                streets_with_type = sum(values .> 0),
-                percent_streets = round(100 * sum(values .> 0) / nrow(features), digits=1),
-                mean_when_present = mean(values[values .> 0]),
-                median_when_present = median(values[values .> 0]),
-                max_count = maximum(values),
-                std_dev = std(values)
-            ))
+            push!(
+                summary_df,
+                (
+                    place_type = String(col),
+                    total_count = sum(values),
+                    streets_with_type = sum(values .> 0),
+                    percent_streets = round(
+                        100 * sum(values .> 0) / nrow(features); digits = 1
+                    ),
+                    mean_when_present = mean(values[values .> 0]),
+                    median_when_present = median(values[values .> 0]),
+                    max_count = maximum(values),
+                    std_dev = std(values)
+                )
+            )
         end
     end
 
     # Sort by prevalence
-    sort!(summary_df, :streets_with_type, rev=true)
+    sort!(summary_df, :streets_with_type; rev = true)
 
     # Save CSV
     CSV.write(joinpath(output_dir, "data", "place_type_summary.csv"), summary_df)
@@ -647,33 +746,483 @@ function save_place_type_summary(features::DataFrame, output_dir::String)
         println(io, "# Place Type Distribution Analysis")
 
         println(io, "\n## Most Common Place Types")
-        println(io, "\n| Rank | Place Type | Streets With | % Streets | Total Count | Mean Count |")
-        println(io, "|------|------------|--------------|-----------|-------------|------------|")
+        println(
+            io,
+            "\n| Rank | Place Type | Streets With | % Streets | Total Count | Mean Count |"
+        )
+        println(
+            io,
+            "|------|------------|--------------|-----------|-------------|------------|"
+        )
 
         for (i, row) in enumerate(eachrow(first(summary_df, 10)))
-            println(io, "| $i | $(row.place_type) | $(row.streets_with_type) | " *
-                   "$(row.percent_streets)% | $(row.total_count) | " *
-                   "$(round(row.mean_when_present, digits=2)) |")
+            println(
+                io,
+                "| $i | $(row.place_type) | $(row.streets_with_type) | " *
+                "$(row.percent_streets)% | $(row.total_count) | " *
+                "$(round(row.mean_when_present, digits=2)) |"
+            )
         end
 
         # Calculate co-location patterns
         println(io, "\n## Place Type Combinations")
 
         # Find streets with multiple place types
-        place_counts = [sum(features[i, col] > 0 for col in place_cols)
-                       for i in 1:nrow(features)]
+        place_counts = [
+            sum(features[i, col] > 0 for col in place_cols) for i = 1:nrow(features)
+        ]
 
         println(io, "\n### Streets by Number of Different Place Types")
-        for n in 0:10
+        for n = 0:10
             count = sum(place_counts .== n)
             if count > 0
-                pct = round(100 * count / nrow(features), digits=1)
+                pct = round(100 * count / nrow(features); digits = 1)
                 println(io, "- $n place types: $count streets ($pct%)")
             end
         end
     end
 
     @info "Place type summary saved"
+end
+
+function save_dataset_summary(
+    incident_matched::DataFrame,
+    arrest_matched::DataFrame,
+    place_matched::DataFrame,
+    total_streets::Int
+)
+    @info "Creating dataset summary table..."
+
+    descriptive_dir = joinpath(OUTPUT_DIR, "descriptive")
+    mkpath(descriptive_dir)
+
+    summary_rows = []
+
+    # Crime incident counts by type
+    for crime_category in CRIME_CATEGORIES
+        category_incidents = filter(row -> row.crime == crime_category, incident_matched)
+        total_count = nrow(category_incidents)
+
+        if "street_id" in names(category_incidents)
+            unique_streets = length(unique(category_incidents.street_id))
+            percent_streets = round(100 * unique_streets / total_streets; digits = 2)
+            count_by_street = combine(
+                groupby(category_incidents, :street_id), nrow => :count
+            )
+            avg_per_street = round(mean(count_by_street.count); digits = 2)
+
+            push!(
+                summary_rows,
+                (
+                    dataset_name = "Incidents",
+                    crime_or_place_type_name = crime_category,
+                    total_count = total_count,
+                    streets_with_any_count = unique_streets,
+                    percent_streets = percent_streets,
+                    avg_per_street = avg_per_street
+                )
+            )
+        end
+    end
+
+    # Arrest counts by type
+    for crime_category in CRIME_CATEGORIES
+        category_arrests = filter(row -> row.crime == crime_category, arrest_matched)
+        total_count = nrow(category_arrests)
+
+        if "street_id" in names(category_arrests)
+            unique_streets = length(unique(category_arrests.street_id))
+            percent_streets = round(100 * unique_streets / total_streets; digits = 2)
+            count_by_street = combine(groupby(category_arrests, :street_id), nrow => :count)
+            avg_per_street = round(mean(count_by_street.count); digits = 2)
+
+            push!(
+                summary_rows,
+                (
+                    dataset_name = "Arrests",
+                    crime_or_place_type_name = crime_category,
+                    total_count = total_count,
+                    streets_with_any_count = unique_streets,
+                    percent_streets = percent_streets,
+                    avg_per_street = avg_per_street
+                )
+            )
+        end
+    end
+
+    # Place counts by category
+    if "category" in names(place_matched) && "street_id" in names(place_matched)
+        place_categories = unique(place_matched.category)
+
+        for place_category in place_categories
+            category_places = filter(row -> row.category == place_category, place_matched)
+            total_count = nrow(category_places)
+            unique_streets = length(unique(category_places.street_id))
+            percent_streets = round(100 * unique_streets / total_streets; digits = 2)
+            count_by_street = combine(groupby(category_places, :street_id), nrow => :count)
+            avg_per_street = round(mean(count_by_street.count); digits = 2)
+
+            push!(
+                summary_rows,
+                (
+                    dataset_name = "Places",
+                    crime_or_place_type_name = place_category,
+                    total_count = total_count,
+                    streets_with_any_count = unique_streets,
+                    percent_streets = percent_streets,
+                    avg_per_street = avg_per_street
+                )
+            )
+        end
+    end
+
+    # Create DataFrame and save
+    summary_df = DataFrame(summary_rows)
+    output_path = joinpath(descriptive_dir, "dataset_summary.csv")
+    CSV.write(output_path, summary_df)
+
+    @info "Dataset summary saved to: $output_path"
+    @info "Total rows: $(nrow(summary_df))"
+
+    return nothing
+end
+
+"""
+Calculate and save crime concentration statistics by crime type following
+Weisburd's crime concentration framework.
+
+Saves to: output/descriptive/crime_concentration_by_type.csv
+
+# Arguments
+
+  - `features::DataFrame`: Street-level feature matrix with crime counts
+  - `dataset_name::String`: Either "incidents" or "arrests"
+"""
+function save_crime_concentration_by_type(features::DataFrame, dataset_name::String)
+    @info "Calculating crime concentration statistics for $dataset_name..."
+
+    descriptive_dir = joinpath(OUTPUT_DIR, "descriptive")
+    mkpath(descriptive_dir)
+
+    concentration_rows = []
+
+    total_streets_count = nrow(features)
+
+    for crime_category in CRIME_CATEGORIES
+        crime_column_name = "crime_$(crime_category)"
+
+        if crime_column_name in names(features)
+            crime_counts = features[!, crime_column_name]
+            total_crime_count = sum(crime_counts)
+            streets_with_crime_count = sum(crime_counts .> 0)
+            percent_streets_with_crime = round(
+                100 * streets_with_crime_count / total_streets_count; digits = 2
+            )
+
+            # Calculate concentration percentiles
+            # Sort streets by crime count (descending)
+            sorted_crime_counts = sort(crime_counts; rev = true)
+            cumulative_crime = cumsum(sorted_crime_counts)
+
+            # Find how many streets account for X% of crime
+            pct_25_streets = 0
+            pct_50_streets = 0
+            pct_75_streets = 0
+            pct_90_streets = 0
+
+            if total_crime_count > 0
+                threshold_25 = 0.25 * total_crime_count
+                threshold_50 = 0.50 * total_crime_count
+                threshold_75 = 0.75 * total_crime_count
+                threshold_90 = 0.90 * total_crime_count
+
+                idx_25 = findfirst(x -> x >= threshold_25, cumulative_crime)
+                idx_50 = findfirst(x -> x >= threshold_50, cumulative_crime)
+                idx_75 = findfirst(x -> x >= threshold_75, cumulative_crime)
+                idx_90 = findfirst(x -> x >= threshold_90, cumulative_crime)
+
+                pct_25_streets = if !isnothing(idx_25)
+                    round(100 * idx_25 / total_streets_count; digits = 2)
+                else
+                    0.0
+                end
+                pct_50_streets = if !isnothing(idx_50)
+                    round(100 * idx_50 / total_streets_count; digits = 2)
+                else
+                    0.0
+                end
+                pct_75_streets = if !isnothing(idx_75)
+                    round(100 * idx_75 / total_streets_count; digits = 2)
+                else
+                    0.0
+                end
+                pct_90_streets = if !isnothing(idx_90)
+                    round(100 * idx_90 / total_streets_count; digits = 2)
+                else
+                    0.0
+                end
+            end
+
+            push!(
+                concentration_rows,
+                (
+                    dataset_name = dataset_name,
+                    crime_type_name = crime_category,
+                    total_crime_count = total_crime_count,
+                    total_streets_count = total_streets_count,
+                    streets_with_crime_count = streets_with_crime_count,
+                    percent_streets_with_crime = percent_streets_with_crime,
+                    percent_streets_accounting_for_25_percent_crime = pct_25_streets,
+                    percent_streets_accounting_for_50_percent_crime = pct_50_streets,
+                    percent_streets_accounting_for_75_percent_crime = pct_75_streets,
+                    percent_streets_accounting_for_90_percent_crime = pct_90_streets
+                )
+            )
+        end
+    end
+
+    # Create DataFrame and save
+    concentration_df = DataFrame(concentration_rows)
+    output_path = joinpath(descriptive_dir, "crime_concentration_$(dataset_name).csv")
+    CSV.write(output_path, concentration_df)
+
+    @info "Crime concentration statistics saved to: $output_path"
+
+    return nothing
+end
+
+"""
+Save target variable threshold analysis including all methods: top25, top50,
+median, and Jenks natural breaks.
+
+Saves to: output/descriptive/target_thresholds_[dataset_name].csv
+
+# Arguments
+
+  - `features::DataFrame`: Street-level feature matrix with crime counts and binary targets
+  - `dataset_name::String`: Either "incidents" or "arrests"
+"""
+function save_target_thresholds_summary(features::DataFrame, dataset_name::String)
+    @info "Creating target variable thresholds summary for $dataset_name..."
+
+    descriptive_dir = joinpath(OUTPUT_DIR, "descriptive")
+    mkpath(descriptive_dir)
+
+    threshold_rows = []
+
+    # All threshold methods
+    threshold_methods = ["top25", "top50", "median", "jenks"]
+
+    for crime_category in CRIME_CATEGORIES
+        crime_column_name = "crime_$(crime_category)"
+        crime_lower = lowercase(crime_category)
+
+        if crime_column_name in names(features)
+            crime_counts = features[!, crime_column_name]
+            total_crime_count = sum(crime_counts)
+
+            for threshold_method_name in threshold_methods
+                target_column_name = "high_$(crime_lower)_$(threshold_method_name)"
+
+                if target_column_name in names(features)
+                    target_flags = features[!, target_column_name]
+                    streets_flagged_count = sum(target_flags)
+                    percent_streets_flagged = round(
+                        100 * streets_flagged_count / nrow(features); digits = 2
+                    )
+
+                    # Calculate how much crime is captured by flagged streets
+                    crime_in_flagged_streets = sum(crime_counts[target_flags])
+                    percent_crime_captured = if total_crime_count > 0
+                        round(100 * crime_in_flagged_streets / total_crime_count; digits = 2)
+                    else
+                        0.0
+                    end
+
+                    # Find the threshold value (minimum crime count in flagged streets)
+                    threshold_value =
+                        streets_flagged_count > 0 ? minimum(crime_counts[target_flags]) : 0
+
+                    push!(
+                        threshold_rows,
+                        (
+                            dataset_name = dataset_name,
+                            crime_type_name = crime_category,
+                            threshold_method_name = threshold_method_name,
+                            threshold_value = threshold_value,
+                            streets_flagged_count = streets_flagged_count,
+                            percent_streets_flagged = percent_streets_flagged,
+                            percent_crime_captured = percent_crime_captured,
+                            total_crime_count = total_crime_count
+                        )
+                    )
+                end
+            end
+        end
+    end
+
+    # Create DataFrame and save
+    thresholds_df = DataFrame(threshold_rows)
+    output_path = joinpath(descriptive_dir, "target_thresholds_$(dataset_name).csv")
+    CSV.write(output_path, thresholds_df)
+
+    @info "Target thresholds summary saved to: $output_path"
+    @info "Threshold methods included: $(join(threshold_methods, ", "))"
+
+    return nothing
+end
+
+"""
+Extract and document the crime and place category mapping rules for
+reproducibility.
+
+Creates two files:
+
+  - output/metadata/crime_category_mapping.csv: Maps offense descriptions to crime categories
+  - output/metadata/place_category_mapping.csv: Maps Google place types to analysis categories
+
+# Arguments
+
+  - None (extracts mappings directly from processing logic)
+"""
+function save_category_mappings()
+    @info "Documenting category mappings for reproducibility..."
+
+    metadata_dir = joinpath(OUTPUT_DIR, "metadata")
+    mkpath(metadata_dir)
+
+    # Crime category mapping documentation
+    crime_mapping_rows = [
+        (
+            offense_pattern = "MURDER|RAPE|ASSAULT|ROBBERY|MANSLAUGHTER|SHOOTING",
+            crime_category = "VIOLENCE",
+            description = "Violent crimes including murder, rape, assault, robbery, manslaughter, and shootings"
+        ),
+        (
+            offense_pattern = "LARCENY|THEFT (excluding IDENTITY)",
+            crime_category = "LARCENY",
+            description = "All larceny and theft offenses (petit larceny, grand larceny, larceny from vehicle) excluding identity theft"
+        ),
+        (
+            offense_pattern = "BURGLARY",
+            crime_category = "BURGLARY",
+            description = "All burglary offenses"
+        ),
+        (
+            offense_pattern = "DRUG|NARCOTIC|MARIJUANA|CONTROLLED",
+            crime_category = "DRUGS",
+            description = "All drug-related offenses including narcotics, marijuana, and controlled substances"
+        )
+    ]
+
+    crime_mapping_df = DataFrame(crime_mapping_rows)
+    crime_output_path = joinpath(metadata_dir, "crime_category_mapping.csv")
+    CSV.write(crime_output_path, crime_mapping_df)
+    @info "Crime category mapping saved to: $crime_output_path"
+
+    # Place category mapping documentation
+    # This documents the major categories - full mapping is in processing.jl
+    place_mapping_rows = [
+        (
+            place_category = "AUTOMOTIVE",
+            example_types = "car_dealer, car_rental, car_repair, gas_station, parking",
+            description = "Automotive sales, service, and infrastructure"
+        ),
+        (
+            place_category = "BUSINESS",
+            example_types = "corporate_office, farm, ranch",
+            description = "Business and corporate facilities"
+        ),
+        (
+            place_category = "CULTURE",
+            example_types = "art_gallery, museum, theater, monument",
+            description = "Cultural venues and landmarks"
+        ),
+        (
+            place_category = "EDUCATION",
+            example_types = "library, school, university, preschool",
+            description = "Educational institutions at all levels"
+        ),
+        (
+            place_category = "ENTERTAINMENT_RECREATION",
+            example_types = "park, night_club, movie_theater, casino, amusement_park",
+            description = "Entertainment and recreational venues"
+        ),
+        (
+            place_category = "FACILITIES",
+            example_types = "public_bath, public_bathroom, stable",
+            description = "Public facilities and infrastructure"
+        ),
+        (
+            place_category = "FINANCE",
+            example_types = "bank, atm, accounting",
+            description = "Financial institutions and services"
+        ),
+        (
+            place_category = "FOOD_DRINK",
+            example_types = "restaurant, cafe, bar, bakery, fast_food",
+            description = "Food and beverage establishments of all types"
+        ),
+        (
+            place_category = "GOVERNMENT",
+            example_types = "city_hall, police, fire_station, post_office, courthouse",
+            description = "Government facilities and public safety"
+        ),
+        (
+            place_category = "HEALTH_WELLNESS",
+            example_types = "hospital, pharmacy, doctor, dentist, spa, gym",
+            description = "Healthcare and wellness facilities"
+        ),
+        (
+            place_category = "LODGING",
+            example_types = "hotel, motel, hostel, bed_and_breakfast",
+            description = "Temporary lodging and accommodations"
+        ),
+        (
+            place_category = "NATURAL_FEATURE",
+            example_types = "beach",
+            description = "Natural geographical features"
+        ),
+        (
+            place_category = "PLACE_OF_WORSHIP",
+            example_types = "church, synagogue, mosque, hindu_temple",
+            description = "Religious facilities"
+        ),
+        (
+            place_category = "SERVICES",
+            example_types = "hair_salon, laundry, lawyer, real_estate, florist",
+            description = "Personal and professional services"
+        ),
+        (
+            place_category = "SHOPPING",
+            example_types = "grocery_store, shopping_mall, clothing_store, bookstore",
+            description = "Retail and shopping establishments"
+        ),
+        (
+            place_category = "SPORTS_RECREATION",
+            example_types = "gym, sports_club, golf_course, stadium",
+            description = "Sports and athletic facilities"
+        ),
+        (
+            place_category = "TRANSIT",
+            example_types = "bus_station, subway_station, train_station, airport",
+            description = "Transportation hubs and transit facilities"
+        ),
+        (
+            place_category = "OTHER",
+            example_types = "unclassified or missing types",
+            description = "Places that don't fit other categories"
+        )
+    ]
+
+    place_mapping_df = DataFrame(place_mapping_rows)
+    place_output_path = joinpath(metadata_dir, "place_category_mapping.csv")
+    CSV.write(place_output_path, place_mapping_df)
+    @info "Place category mapping saved to: $place_output_path"
+
+    @info "Category mapping documentation complete"
+
+    return nothing
 end
 
 function create_summary_visualizations(features::DataFrame)::Nothing
@@ -999,7 +1548,7 @@ function generate_summary_report(features::DataFrame, models::Dict{Symbol, Any})
         println(io, "- Model coefficients: `models/model_coefficients.csv`")
         println(io, "- Model predictions: `models/model_predictions.csv`")
         println(io, "- Performance metrics: `models/model_performance.csv`")
-        println(io, "- Visualizations: `figures/` directory")
+        return println(io, "- Visualizations: `figures/` directory")
     end
 
     @info "Saved summary report to $report_path"

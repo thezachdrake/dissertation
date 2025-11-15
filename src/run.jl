@@ -1,2 +1,1 @@
-function run()::Nothing
-end
+function run()::Nothing end

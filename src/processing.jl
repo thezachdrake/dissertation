@@ -24,8 +24,9 @@ function process_incident_data()::GeoTable
 
     # Map offense descriptions to standardized crime categories
     if "ofns_desc" in names(incidents_df)
-        incidents_df[!, :crime] =
-            map_crime_category.(incidents_df[!, :ofns_desc], incidents_df[!, :law_category])
+        incidents_df[!, :crime] = map_crime_category.(
+            incidents_df[!, :ofns_desc], incidents_df[!, :law_category]
+        )
     else
         incidents_df[!, :crime] = fill("", nrow(incidents_df))
     end
@@ -34,8 +35,8 @@ function process_incident_data()::GeoTable
     incidents_filtered = filter(
         row ->
             !isempty(row.crime) &&  # Only include crimes in our 4 categories
-                !ismissing(row.geometry) &&
-                row.boro_nm == "MANHATTAN",
+            !ismissing(row.geometry) &&
+            row.boro_nm == "MANHATTAN",
         incidents_df
     )
 
@@ -81,12 +82,9 @@ function process_arrest_data()::GeoTable
     arrests_df = DataFrame(arrests)
     # Standardize borough names - arrests use 'arrest_boro' vs incidents' 'boro_nm'
     if "arrest_boro" in names(arrests_df)
-        arrests_df[!, :boro_nm] =
-            ifelse.(
-                arrests_df[!, :arrest_boro] .== "M",
-                "MANHATTAN",
-                arrests_df[!, :arrest_boro]
-            )
+        arrests_df[!, :boro_nm] = ifelse.(
+            arrests_df[!, :arrest_boro] .== "M", "MANHATTAN", arrests_df[!, :arrest_boro]
+        )
     end
 
     # Map law category codes to standardized categories
@@ -98,20 +96,21 @@ function process_arrest_data()::GeoTable
 
     # Map offense descriptions to standardized crime categories
     if "ofns_desc" in names(arrests_df)
-        arrests_df[!, :crime] =
-            map_crime_category.(arrests_df[!, :ofns_desc], arrests_df[!, :law_category])
+        arrests_df[!, :crime] = map_crime_category.(
+            arrests_df[!, :ofns_desc], arrests_df[!, :law_category]
+        )
     else
         arrests_df[!, :crime] = fill("", nrow(arrests_df))
     end
 
-	@info names(arrests_df)
+    @info names(arrests_df)
 
     # Filter for valid Manhattan arrest data
     arrests_filtered = filter(
         row ->
             !isempty(row.crime) &&  # Only include crimes in our 4 categories
-                !ismissing(row.geometry) &&
-                row.boro_nm == "MANHATTAN",
+            !ismissing(row.geometry) &&
+            row.boro_nm == "MANHATTAN",
         arrests_df
     )
 
@@ -158,8 +157,8 @@ function map_law_category(law_cat_cd::String)::String
 end
 
 function map_law_category(law_cat_cd::Missing)::String
-	return ""
-end 
+    return ""
+end
 
 function map_crime_category(offense_desc::String, law_category::String)
     # Handle missing/null values - return empty string for filtering
@@ -277,7 +276,8 @@ function process_place_data()::GeoTable
     # Convert to GeoTable with proper coordinate system
     if nrow(places_data) > 0
         points = [
-            Meshes.Point(LatLon{WGS84Latest}(row.lat, row.lon)) for row in eachrow(places_data)
+            Meshes.Point(LatLon{WGS84Latest}(row.lat, row.lon)) for
+            row in eachrow(places_data)
         ]
         places_geo = georef(places_data, points)
 
@@ -639,8 +639,9 @@ function process_street_data()
     # Clean and standardize identifiers
     # Use PHYSICALID as primary identifier, with FULL_STREE as readable name
     manhattan_streets_df[!, :street_id] = string.(manhattan_streets_df.physicalid)
-    manhattan_streets_df[!, :street_name] =
-        coalesce.(manhattan_streets_df.full_street_name, "Unknown Street")
+    manhattan_streets_df[!, :street_name] = coalesce.(
+        manhattan_streets_df.full_street_name, "Unknown Street"
+    )
 
     # Get corresponding geometries
     manhattan_indices = findall(streets.boroughcode .== "1")

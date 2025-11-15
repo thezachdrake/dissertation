@@ -19,7 +19,7 @@ using CairoMakie, Colors, ColorSchemes
 using FileIO, Glob, DotEnv, Unitful
 
 if isfile(".env")
-	DotEnv.load!()
+    DotEnv.load!()
 end
 
 DATA_DIR = get(ENV, "DATA_DIR", "data")

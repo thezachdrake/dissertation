@@ -1090,8 +1090,8 @@ function test_routine_activities_predictions(significant_interactions, model_com
     guardian_interactions = filter(
         row ->
             occursin("Formal guardianship", row.interpretation) ||
-                occursin("Natural surveillance", row.interpretation) ||
-                occursin("Community cohesion", row.interpretation),
+            occursin("Natural surveillance", row.interpretation) ||
+            occursin("Community cohesion", row.interpretation),
         significant_interactions
     )
 
@@ -1112,7 +1112,7 @@ function test_routine_activities_predictions(significant_interactions, model_com
     nightlife = filter(
         row ->
             occursin("Nightlife", row.interpretation) &&
-                occursin("violence", lowercase(row.target)),
+            occursin("violence", lowercase(row.target)),
         significant_interactions
     )
 
@@ -1132,7 +1132,7 @@ function test_routine_activities_predictions(significant_interactions, model_com
     commercial = filter(
         row ->
             occursin("Commercial", row.interpretation) &&
-                occursin("larceny", lowercase(row.target)),
+            occursin("larceny", lowercase(row.target)),
         significant_interactions
     )
 
@@ -1437,7 +1437,7 @@ function compare_all_models(
     @info "  Identifying best models by AIC..."
     best_by_crime = combine(groupby(model_data, [:dataset, :crime_type])) do df
         best_idx = argmin(df.aic)
-        df[best_idx, :]
+        return df[best_idx, :]
     end
     CSV.write(joinpath(comparison_dir, "best_models_by_crime.csv"), best_by_crime)
 
