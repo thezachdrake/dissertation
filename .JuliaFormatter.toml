@@ -4,6 +4,9 @@
 # Use BlueStyle as the base (conservative, widely-used style)
 style = "blue"
 
+# Only format src/ directory, ignore everything else
+ignore = [".julia/**", "test/**", "docs/**", "build/**", "data/**", "output/**"]
+
 # Line length to match your Zed settings
 margin = 92
 
@@ -28,17 +31,8 @@ align_pair_arrow = true
 # Align matrix rows for readability
 align_matrix = true
 
-# Remove trailing whitespace
-remove_trailing_whitespace = true
-
 # Remove trailing commas
 trailing_comma = false
-
-# Always add a newline at the end of the file
-trailing_newline = true
-
-# Don't automatically fix style issues, just format
-annotate_unformatted_files = false
 
 # Normalize line endings to Unix style (LF)
 normalize_line_endings = "unix"

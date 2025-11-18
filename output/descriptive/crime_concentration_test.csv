@@ -1,0 +1,5 @@
+dataset_name,crime_type_name,total_crime_count,total_streets_count,streets_with_crime_count,percent_streets_with_crime,percent_streets_accounting_for_25_percent_crime,percent_streets_accounting_for_50_percent_crime,percent_streets_accounting_for_75_percent_crime,percent_streets_accounting_for_90_percent_crime
+test,LARCENY,42082,13917,5407,38.85,0.33,1.88,9.35,20.04
+test,VIOLENCE,16489,13917,4087,29.37,1.21,4.36,10.74,18.37
+test,BURGLARY,2572,13917,1427,10.25,0.38,2.16,5.63,8.41
+test,DRUGS,4183,13917,1183,8.5,0.15,0.68,2.44,5.5
