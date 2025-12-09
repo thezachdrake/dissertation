@@ -18,13 +18,16 @@ function calculate_cooccurrence_matrix(
 )::Tuple{DataFrame, Vector{Symbol}}
     @info "Calculating place type co-occurrence matrix..."
 
-    # Identify place columns (exclude crime, metadata, and derived columns)
+    # Identify place columns (exclude crime, metadata, derived columns, and OTHER category)
     place_cols = Symbol[]
     for col in names(features)
         col_str = String(col)
-        # Include only place-related numeric columns
+        # Include only place-related numeric columns (exclude OTHER, interactions, and metadata)
         if !startswith(col_str, "crime_") &&
             !startswith(col_str, "high_") &&
+            !startswith(col_str, "interact_") &&  # Exclude interaction terms
+            !startswith(col_str, "PC_") &&         # Exclude PCA components
+            col_str != "OTHER" &&                  # Exclude OTHER catch-all category
             !in(
                 col,
                 [
@@ -33,11 +36,13 @@ function calculate_cooccurrence_matrix(
                     :total_crime,
                     :total_places,
                     :crime_place_ratio,
-                    :commercial_activity
+                    :commercial_activity,
+                    :street_length_meters,
+                    :place_density
                 ]
             ) &&
             eltype(features[!, col]) <: Number
-            push!(place_cols, col)
+            push!(place_cols, Symbol(col))
         end
     end
 

@@ -1,0 +1,13 @@
+model,n_observations,n_predictors,deviance,null_deviance,aic,bic,mcfadden_r2,log_likelihood
+high_burglary_top50,13917,16,Inf,234.96831268049075,Inf,Inf,-Inf,-Inf
+high_violence_jenks,13917,16,Inf,248.5664836552718,Inf,Inf,-Inf,-Inf
+high_violence_top25,13917,16,Inf,193.3326838142683,Inf,Inf,-Inf,-Inf
+high_larceny_top25,13917,16,Inf,150.17973121448912,Inf,Inf,-Inf,-Inf
+high_burglary_jenks,13917,16,Inf,56.65287789095784,Inf,Inf,-Inf,-Inf
+high_drugs_top25,13917,16,Inf,248.5664836552634,Inf,Inf,-Inf,-Inf
+high_burglary_top25,13917,16,Inf,73.2354264751582,Inf,Inf,-Inf,-Inf
+high_larceny_jenks,13917,16,Inf,500.835812839412,Inf,Inf,-Inf,-Inf
+high_larceny_top50,13917,16,Inf,464.8493713643484,Inf,Inf,-Inf,-Inf
+high_violence_top50,13917,16,Inf,1370.2743650937477,Inf,Inf,-Inf,-Inf
+high_drugs_top50,13917,16,Inf,1086.8069294680563,Inf,Inf,-Inf,-Inf
+high_drugs_jenks,13917,16,Inf,193.3326838142575,Inf,Inf,-Inf,-Inf

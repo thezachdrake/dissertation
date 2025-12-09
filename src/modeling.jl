@@ -6,73 +6,72 @@ These functions implement the logistic regression methodology described in the
 paper's Methods section for addressing Research Questions 2 and 3.
 """
 
+
 """
-    fit_logistic_models(features::DataFrame, target_cols::Vector{Symbol})::Dict{Symbol, GLM.TableRegressionModel}
+    fit_logistic_models(features::DataFrame, target_cols::Vector{Symbol}, dataset_name::String)::Nothing
 
-Fit logistic regression models predicting high-crime streets from place-based features.
+Hierarchical modeling approach testing three levels of feature complexity:
 
-This function implements the analytical approach for Research Question 2: "Can the
-composition of facilities at place predict whether a place is a 'hot spot' for crime?"
-As stated in the paper, individual regression models are fitted for each target variable
-(crime type and threshold combination) to assess differential impacts of place types
-on different crime categories.
+1. RQ2: Counts only - Can simple place type counts predict crime?
+2. RQ3a: Interactions only - Do place combinations add predictive power?
+3. RQ3b: PCA only - Do latent patterns from raw place types improve predictions?
 
-The methodology follows routine activities theory, expecting that facility impacts on
-crime risk vary by crime type. For example, the paper hypothesizes that lodging
-facilities (hotels, motels) would have different impacts on drug crimes versus
-violent crimes.
+This implements the research design from the dissertation: testing whether we need
+simple features, moderate complexity (interactions), or deep patterns (PCA) to
+predict crime hot spots.
 
-Arguments:
-
-  - features: DataFrame containing:
-
-      + Place type counts (predictor variables)
-      + Binary high-crime indicators (target variables)
-      + Street identifiers and metadata
-
-  - target_cols: Vector of target column names (e.g., :high_larceny_top25)
-
-Returns:
-
-  - Dict{Symbol, GLM.TableRegressionModel}: Dictionary mapping target names to fitted models
-
-      + Keys: Target variable names
-      + Values: Fitted logistic regression models with coefficients and statistics
-
-Model Specifications:
-
-  - Family: Binomial (for binary outcomes)
-  - Link: Logit (log-odds transformation)
-  - Predictors: Place type counts with sufficient variation (>5% prevalence)
-  - Targets: Binary indicators of high-crime status
-
-Quality Metrics Calculated:
-
-  - Deviance: Model fit statistic
-  - AIC: Akaike Information Criterion for model comparison
-  - McFadden's R²: Pseudo R-squared for logistic regression
-  - Null deviance: Baseline for R² calculation
-
-Process:
-
- 1. Identify valid place-based predictor columns
- 2. Filter predictors with insufficient variation (<2 unique values or <5% prevalence)
- 3. Build formula for each target: target ~ place1 + place2 + ...
- 4. Fit logistic regression using maximum likelihood estimation
- 5. Calculate and log model diagnostics
- 6. Return dictionary of successfully fitted models
+All three model sets are fitted, compared, and saved separately.
 """
 function fit_logistic_models(
+    features::DataFrame, target_cols::Vector{Symbol}, dataset_name::String
+)::Nothing
+    @info "="^80
+    @info "HIERARCHICAL MODELING FOR $(uppercase(dataset_name))"
+    @info "Testing 3 feature complexity levels:"
+    @info "  1. RQ2: Counts only (simple)"
+    @info "  2. RQ3a: Interactions only (moderate)"
+    @info "  3. RQ3b: PCA only (complex)"
+    @info "="^80
+
+    # Fit all three model variants
+    @info "\n[RQ2] Fitting COUNTS-ONLY models (simple place type counts)..."
+    models_counts = fit_logistic_models_counts(features, target_cols)
+
+    @info "\n[RQ3a] Fitting INTERACTIONS-ONLY models (pairwise place combinations)..."
+    models_interactions = fit_logistic_models_interactions(features, target_cols)
+
+    @info "\n[RQ3b] Fitting PCA-ONLY models (latent place type dimensions)..."
+    models_pca = fit_logistic_models_pca(features, target_cols)
+
+    # Save all results separately (treating each as independent research question)
+    @info "\n[SAVING] Saving results for all three model types..."
+    save_results(features, models_counts, "$(dataset_name)_counts")
+    save_results(features, models_interactions, "$(dataset_name)_interactions")
+    save_results(features, models_pca, "$(dataset_name)_pca")
+
+    @info "="^80
+    @info "HIERARCHICAL MODELING COMPLETE"
+    @info "  RQ2 (Counts) models: $(length(models_counts))"
+    @info "  RQ3a (Interactions) models: $(length(models_interactions))"
+    @info "  RQ3b (PCA) models: $(length(models_pca))"
+    @info "  Results saved separately for each research question"
+    @info "="^80
+
+    return nothing
+end
+
+function fit_logistic_models_counts(
     features::DataFrame, target_cols::Vector{Symbol}
 )::Dict{Symbol, Any}
-    @info "Fitting logistic regression models for $(length(target_cols)) targets..."
+    @info "Fitting logistic regression models for $(length(target_cols)) targets using COUNT features..."
 
-    # Identify predictor columns (exclude identifiers, targets, and derived crime features)
+    # Identify predictor columns (counts only)
     predictor_cols = [
-        col for col in names(features) if !startswith(String(col), "crime_") &&           # Exclude crime counts
-        !startswith(String(col), "high_") &&            # Exclude targets
-        !in(col, [:street_id, :street_name]) &&         # Exclude identifiers
-        !in(col, [:total_crime, :total_places])         # Exclude totals that include crime
+        col for col in names(features) if !startswith(String(col), "crime_") &&
+        !startswith(String(col), "high_") &&
+        !startswith(String(col), "interact_") &&
+        !startswith(String(col), "PC_") &&
+        !in(col, [:street_id, :street_name, :total_crime, :total_places, :crime_place_ratio, :street_length_meters, :place_density])
     ]
 
     @info "Candidate predictors: $(length(predictor_cols)) columns"
@@ -83,7 +82,6 @@ function fit_logistic_models(
         if eltype(features[!, col]) <: Number
             unique_vals = length(unique(features[!, col]))
             if unique_vals > 1
-                # Check for reasonable variation (not just 0s and 1s with very few 1s)
                 if unique_vals > 2 || (unique_vals == 2 && mean(features[!, col]) > 0.05)
                     push!(filtered_predictors, Symbol(col))
                 end
@@ -94,44 +92,27 @@ function fit_logistic_models(
     @info "Using $(length(filtered_predictors)) predictors with sufficient variation"
     @info "Predictors: $(join(String.(filtered_predictors), ", "))"
 
-    models = Dict()
+    models = Dict{Symbol, Any}()
 
     for target_col in target_cols
         @info "Fitting model for $(target_col)..."
 
         try
-            # Create model formula
             predictor_terms = Term.(filtered_predictors)
             target_term = Term(target_col)
 
-            # Build formula: target ~ predictor1 + predictor2 + ...
             if !isempty(predictor_terms)
                 formula = FormulaTerm(target_term, sum(predictor_terms))
             else
-                # Intercept-only model if no predictors
                 formula = FormulaTerm(target_term, ConstantTerm(1))
                 @warn "No valid predictors for $(target_col), fitting intercept-only model"
             end
 
-            # Fit logistic regression
             model = glm(formula, features, Binomial(), LogitLink())
-
             models[target_col] = model
 
-            # Log model diagnostics
             @info "Model $(target_col) fitted successfully:"
-            @info "  Deviance: $(round(deviance(model), digits=2))"
             @info "  AIC: $(round(aic(model), digits=2))"
-            @info "  Null deviance: $(round(nulldeviance(model), digits=2))"
-
-            # Calculate pseudo R-squared (McFadden's)
-            null_dev = nulldeviance(model)
-            model_dev = deviance(model)
-            if null_dev > 0
-                pseudo_r2 = 1 - (model_dev / null_dev)
-                @info "  McFadden R²: $(round(pseudo_r2, digits=3))"
-            end
-
         catch e
             @error "Failed to fit model for $(target_col): $(e)"
             continue
@@ -140,6 +121,217 @@ function fit_logistic_models(
 
     @info "Successfully fitted $(length(models)) models"
     return models
+end
+
+function fit_logistic_models_interactions(
+    features::DataFrame, target_cols::Vector{Symbol}
+)::Dict{Symbol, Any}
+    @info "Fitting logistic regression models for $(length(target_cols)) targets using INTERACTION features..."
+
+    # Identify predictor columns (interactions only)
+    predictor_cols = [
+        Symbol(col) for col in names(features) if startswith(String(col), "interact_")
+    ]
+
+    @info "Candidate predictors: $(length(predictor_cols)) columns"
+
+    # Filter predictors for sufficient variation
+    filtered_predictors = Symbol[]
+    for col in predictor_cols
+        if eltype(features[!, col]) <: Number
+            unique_vals = length(unique(features[!, col]))
+            if unique_vals > 1
+                if unique_vals > 2 || (unique_vals == 2 && mean(features[!, col]) > 0.05)
+                    push!(filtered_predictors, Symbol(col))
+                end
+            end
+        end
+    end
+
+    @info "Using $(length(filtered_predictors)) predictors with sufficient variation"
+    @info "Predictors: $(join(String.(filtered_predictors), ", "))"
+
+    models = Dict{Symbol, Any}()
+
+    for target_col in target_cols
+        @info "Fitting model for $(target_col)..."
+
+        try
+            predictor_terms = Term.(filtered_predictors)
+            target_term = Term(target_col)
+
+            if !isempty(predictor_terms)
+                formula = FormulaTerm(target_term, sum(predictor_terms))
+            else
+                formula = FormulaTerm(target_term, ConstantTerm(1))
+                @warn "No valid predictors for $(target_col), fitting intercept-only model"
+            end
+
+            model = glm(formula, features, Binomial(), LogitLink())
+            models[target_col] = model
+
+            @info "Model $(target_col) fitted successfully:"
+            @info "  AIC: $(round(aic(model), digits=2))"
+        catch e
+            @error "Failed to fit model for $(target_col): $(e)"
+            continue
+        end
+    end
+
+    @info "Successfully fitted $(length(models)) models"
+    return models
+end
+
+function fit_logistic_models_pca(
+    features::DataFrame, target_cols::Vector{Symbol}
+)::Dict{Symbol, Any}
+    @info "Fitting logistic regression models for $(length(target_cols)) targets using PCA features..."
+
+    # Identify predictor columns (PCA only)
+    predictor_cols = [
+        Symbol(col) for col in names(features) if startswith(String(col), "PC_")
+    ]
+
+    @info "Candidate predictors: $(length(predictor_cols)) columns"
+
+    # PCA components are already optimized for variance by definition
+    # Just verify they're numeric and have non-zero variance
+    filtered_predictors = Symbol[]
+    for col in predictor_cols
+        if eltype(features[!, col]) <: Number
+            col_var = var(features[!, col])
+            if col_var > 0  # Simple check: any variance at all
+                push!(filtered_predictors, Symbol(col))
+            else
+                @warn "PCA component $col has zero variance, excluding"
+            end
+        end
+    end
+
+    @info "Using $(length(filtered_predictors)) PCA predictors"
+    @info "Predictors: $(join(String.(filtered_predictors), ", "))"
+
+    models = Dict{Symbol, Any}()
+
+    for target_col in target_cols
+        @info "Fitting model for $(target_col)..."
+
+        try
+            predictor_terms = Term.(filtered_predictors)
+            target_term = Term(target_col)
+
+            if !isempty(predictor_terms)
+                formula = FormulaTerm(target_term, sum(predictor_terms))
+            else
+                formula = FormulaTerm(target_term, ConstantTerm(1))
+                @warn "No valid predictors for $(target_col), fitting intercept-only model"
+            end
+
+            model = glm(formula, features, Binomial(), LogitLink())
+            models[target_col] = model
+
+            @info "Model $(target_col) fitted successfully:"
+            @info "  AIC: $(round(aic(model), digits=2))"
+        catch e
+            @error "Failed to fit model for $(target_col): $(e)"
+            continue
+        end
+    end
+
+    @info "Successfully fitted $(length(models)) models"
+    return models
+end
+
+"""
+    compare_model_variants(models_counts::Dict{Symbol, Any}, models_interactions::Dict{Symbol, Any}, models_pca::Dict{Symbol, Any}, target_cols::Vector{Symbol})::DataFrame
+
+Compare model performance across three feature types to determine optimal complexity level.
+
+This implements the hierarchical research design: testing whether simple counts,
+moderate interactions, or complex PCA patterns best predict crime hot spots.
+
+Returns DataFrame with columns:
+- target: Crime type and threshold (e.g., "high_larceny_top25")
+- counts_aic, interactions_aic, pca_aic: Model fit for each approach
+- counts_r2, interactions_r2, pca_r2: McFadden R² for each approach
+- best_model: Which feature type performed best (by AIC)
+- improvement_over_counts: How much better interactions/PCA are vs simple counts
+"""
+function compare_model_variants(
+    models_counts::Dict{Symbol, Any},
+    models_interactions::Dict{Symbol, Any},
+    models_pca::Dict{Symbol, Any},
+    target_cols::Vector{Symbol}
+)::DataFrame
+    comparison_rows = []
+
+    for target in target_cols
+        # Skip if any model failed to fit
+        if !haskey(models_counts, target) || !haskey(models_interactions, target) || !haskey(models_pca, target)
+            @warn "Skipping comparison for $target - not all models fitted successfully"
+            continue
+        end
+
+        model_counts = models_counts[target]
+        model_interact = models_interactions[target]
+        model_pca = models_pca[target]
+
+        # Extract performance metrics
+        aic_counts = aic(model_counts)
+        aic_interact = aic(model_interact)
+        aic_pca = aic(model_pca)
+
+        # Calculate McFadden R²
+        r2_counts = 1 - (deviance(model_counts) / nulldeviance(model_counts))
+        r2_interact = 1 - (deviance(model_interact) / nulldeviance(model_interact))
+        r2_pca = 1 - (deviance(model_pca) / nulldeviance(model_pca))
+
+        # Determine best model (lowest AIC)
+        best_aic = minimum([aic_counts, aic_interact, aic_pca])
+        best_model = if aic_counts == best_aic
+            "counts"
+        elseif aic_interact == best_aic
+            "interactions"
+        else
+            "pca"
+        end
+
+        # Calculate improvement over baseline (counts)
+        aic_improvement_interact = aic_counts - aic_interact
+        aic_improvement_pca = aic_counts - aic_pca
+
+        push!(
+            comparison_rows,
+            (
+                target = String(target),
+                counts_aic = aic_counts,
+                interactions_aic = aic_interact,
+                pca_aic = aic_pca,
+                counts_r2 = r2_counts,
+                interactions_r2 = r2_interact,
+                pca_r2 = r2_pca,
+                best_model = best_model,
+                aic_improvement_interactions = aic_improvement_interact,
+                aic_improvement_pca = aic_improvement_pca
+            )
+        )
+    end
+
+    comparison_df = DataFrame(comparison_rows)
+
+    # Log summary
+    if nrow(comparison_df) > 0
+        @info "Model Comparison Summary:"
+        counts_wins = sum(comparison_df.best_model .== "counts")
+        interact_wins = sum(comparison_df.best_model .== "interactions")
+        pca_wins = sum(comparison_df.best_model .== "pca")
+
+        @info "  Counts-only wins: $counts_wins / $(nrow(comparison_df))"
+        @info "  Interactions wins: $interact_wins / $(nrow(comparison_df))"
+        @info "  PCA wins: $pca_wins / $(nrow(comparison_df))"
+    end
+
+    return comparison_df
 end
 
 """
@@ -766,12 +958,15 @@ function identify_significant_predictors(
     )
 
     # Add effect direction consistency
+    predictor_summary[!, :direction_consistency] = zeros(nrow(predictor_summary))
+    predictor_summary[!, :effect_direction] = fill("", nrow(predictor_summary))
+
     for term in unique(significant.term)
         term_coefs = filter(row -> row.term == term, significant).coefficient
         pos_count = sum(term_coefs .> 0)
         neg_count = sum(term_coefs .< 0)
 
-        idx = findfirst(row -> row.term == term, predictor_summary)
+        idx = findfirst(row -> row.term == term, eachrow(predictor_summary))
         if idx !== nothing
             predictor_summary[idx, :direction_consistency] =
                 max(pos_count, neg_count) / length(term_coefs)
@@ -1330,124 +1525,4 @@ function fit_all_model_variants(
 
     @info "  ✓ Successfully fitted all 48 $(dataset_name) models"
     return all_models
-end
-
-"""
-    compare_all_models(incident_models, arrest_models)
-
-Comprehensive comparison across all 96 models:
-
-  - Model types (base vs interactions vs PCA)
-  - Target methods (top25, top50, median, jenks)
-  - Crime types (4 categories)
-  - Dataset types (incidents vs arrests)
-
-Generates detailed comparison reports and visualizations.
-"""
-function compare_all_models(
-    incident_models::Dict{String, Any}, arrest_models::Dict{String, Any}
-)
-    @info "Running comprehensive model comparisons (96 models)..."
-
-    comparison_dir = joinpath(OUTPUT_DIR, "model_comparison")
-    mkpath(comparison_dir)
-
-    # Combine all models for analysis
-    all_models = merge(incident_models, arrest_models)
-
-    # Parse model names to extract components
-    model_data = DataFrame(;
-        model_name = String[],
-        dataset = String[],
-        crime_type = String[],
-        target_method = String[],
-        model_type = String[],
-        aic = Float64[],
-        bic = Float64[],
-        mcfadden_r2 = Float64[],
-        deviance = Float64[],
-        null_deviance = Float64[]
-    )
-
-    for (name, model) in all_models
-        # Parse name: "incidents_high_larceny_top25_base"
-        parts = split(name, "_")
-        if length(parts) >= 5
-            dataset = parts[1]  # incidents or arrests
-            # Skip "high"
-            crime = parts[3]  # larceny, violence, etc.
-            target = parts[4]  # top25, top50, median, jenks
-            mtype = parts[end]  # base, interactions, pca
-
-            push!(
-                model_data,
-                (
-                    name,
-                    dataset,
-                    crime,
-                    target,
-                    mtype,
-                    aic(model),
-                    bic(model),
-                    1 - deviance(model) / nulldeviance(model),  # McFadden R²
-                    deviance(model),
-                    nulldeviance(model)
-                )
-            )
-        end
-    end
-
-    # Save comprehensive model comparison
-    CSV.write(joinpath(comparison_dir, "all_models_comparison.csv"), model_data)
-    @info "Saved comprehensive model comparison to: $(comparison_dir)/all_models_comparison.csv"
-
-    # 1. Compare model types
-    @info "  Comparing model types (base vs interactions vs PCA)..."
-    model_type_summary = combine(
-        groupby(model_data, [:dataset, :model_type]),
-        :aic => mean => :mean_aic,
-        :mcfadden_r2 => mean => :mean_r2,
-        nrow => :n_models
-    )
-    CSV.write(joinpath(comparison_dir, "model_type_comparison.csv"), model_type_summary)
-
-    # 2. Compare target methods
-    @info "  Comparing target methods (top25, top50, median, jenks)..."
-    target_method_summary = combine(
-        groupby(model_data, [:dataset, :target_method]),
-        :aic => mean => :mean_aic,
-        :mcfadden_r2 => mean => :mean_r2,
-        nrow => :n_models
-    )
-    CSV.write(
-        joinpath(comparison_dir, "target_method_comparison.csv"), target_method_summary
-    )
-
-    # 3. Compare crime types
-    @info "  Comparing crime types..."
-    crime_type_summary = combine(
-        groupby(model_data, [:dataset, :crime_type]),
-        :aic => mean => :mean_aic,
-        :mcfadden_r2 => mean => :mean_r2,
-        nrow => :n_models
-    )
-    CSV.write(joinpath(comparison_dir, "crime_type_comparison.csv"), crime_type_summary)
-
-    # 4. Find best models
-    @info "  Identifying best models by AIC..."
-    best_by_crime = combine(groupby(model_data, [:dataset, :crime_type])) do df
-        best_idx = argmin(df.aic)
-        return df[best_idx, :]
-    end
-    CSV.write(joinpath(comparison_dir, "best_models_by_crime.csv"), best_by_crime)
-
-    @info "  ✓ Model comparison complete - results saved to $comparison_dir"
-
-    return Dict(
-        :all_models => model_data,
-        :model_types => model_type_summary,
-        :target_methods => target_method_summary,
-        :crime_types => crime_type_summary,
-        :best_models => best_by_crime
-    )
 end

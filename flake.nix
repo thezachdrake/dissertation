@@ -61,7 +61,13 @@
             export PATH="$PWD/.julia/bin:$PATH"
 
             # Create local Julia depot directory if it doesn't exist
-            mkdir -p .julia
+            mkdir -p .julia/config
+
+            # Copy startup script to Julia config
+            if [ -f startup.jl ]; then
+              cp startup.jl .julia/config/startup.jl
+              echo "Copied startup.jl to .julia/config/"
+            fi
 
             # Instantiate the project packages
             echo "Instantiating Julia project..."

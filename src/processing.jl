@@ -192,6 +192,56 @@ function map_crime_category(offense_desc::String, law_category::String)
     end
 end
 
+# Table B types to filter out (generic/categorical types that don't provide meaningful info for PCA)
+const TABLE_B_FILTER = Set([
+    # Generic business descriptors (ubiquitous)
+    "establishment",
+    "point_of_interest",
+
+    # Generic category descriptors (too broad)
+    "food",
+    "store",
+    "health",
+    "finance",
+
+    # Geographic/administrative (not business types)
+    "administrative_area_level_1",
+    "administrative_area_level_2",
+    "administrative_area_level_3",
+    "administrative_area_level_4",
+    "administrative_area_level_5",
+    "administrative_area_level_6",
+    "administrative_area_level_7",
+    "archipelago",
+    "colloquial_area",
+    "continent",
+    "country",
+    "geocode",
+    "intersection",
+    "locality",
+    "neighborhood",
+    "political",
+    "postal_code",
+    "postal_code_prefix",
+    "postal_code_suffix",
+    "postal_town",
+    "premise",
+    "route",
+    "street_address",
+    "street_number",
+    "sublocality",
+    "sublocality_level_1",
+    "sublocality_level_2",
+    "sublocality_level_3",
+    "sublocality_level_4",
+    "sublocality_level_5",
+    "subpremise",
+    "town_square",
+
+    # Other generic
+    "plus_code"
+])
+
 function process_place_data()::GeoTable
     @info "Processing place data..."
 
@@ -203,13 +253,13 @@ function process_place_data()::GeoTable
     place_files = glob("*.json", places_dir)
     @info "Found $(length(place_files)) place files to process"
 
-    # Initialize data structure
+    # Initialize data structure - NOW SUPPORTS MULTIPLE ROWS PER PLACE
     places_data = DataFrame(;
         id = String[],
         name = String[],
         primary_type = String[],
         category = String[],
-        raw_type = String[],  # NEW: Preserve raw type for PCA
+        raw_type = String[],  # Table A types only, one row per type
         lat = Float64[],
         lon = Float64[],
         address = String[]
@@ -217,6 +267,9 @@ function process_place_data()::GeoTable
 
     processed_count = 0
     error_count = 0
+    total_types_extracted = 0
+    places_with_no_types = 0
+    unknown_places_filtered = 0
 
     for file in place_files
         try
@@ -244,20 +297,42 @@ function process_place_data()::GeoTable
                 # Get formatted address
                 address = get(place_data, "formattedAddress", "Unknown")
 
-                # Add to dataset
-                push!(
-                    places_data,
-                    (
-                        place_data["id"],
-                        string(display_name),
-                        string(primary_type),
-                        string(category),
-                        string(primary_type),  # NEW: Store as raw_type for PCA
-                        lat,
-                        lon,
-                        string(address)
+                # Extract ALL types from types array, filter out Table B
+                types_array = get(place_data, "types", String[])
+                filtered_types = filter(t -> !(t in TABLE_B_FILTER), types_array)
+
+                # Fallback: if no Table A types remain, use primaryType
+                # BUT skip places with unknown type (missing data)
+                if isempty(filtered_types)
+                    if primary_type == "unknown"
+                        # Skip this place entirely - it has no meaningful type classification
+                        unknown_places_filtered += 1
+                        processed_count += 1  # Count as processed
+                        continue  # Skip to next place file
+                    else
+                        # Use valid primaryType as fallback
+                        filtered_types = [primary_type]
+                        places_with_no_types += 1
+                    end
+                end
+
+                # Create ONE ROW PER FILTERED TYPE (multi-hot encoding)
+                for raw_type in filtered_types
+                    push!(
+                        places_data,
+                        (
+                            place_data["id"],
+                            string(display_name),
+                            string(primary_type),
+                            string(category),
+                            string(raw_type),  # Filtered Table A type
+                            lat,
+                            lon,
+                            string(address)
+                        )
                     )
-                )
+                    total_types_extracted += 1
+                end
 
                 processed_count += 1
             else
@@ -272,6 +347,10 @@ function process_place_data()::GeoTable
     end
 
     @info "Processed $(processed_count) places successfully, $(error_count) files had errors"
+    @info "Filtered out $(unknown_places_filtered) places with unknown type ($(round(100*unknown_places_filtered/max(processed_count,1), digits=1))%)"
+    @info "Retained $(processed_count - unknown_places_filtered) places with valid types ($(round(100*(processed_count - unknown_places_filtered)/max(processed_count,1), digits=1))%)"
+    @info "Extracted $(total_types_extracted) total Table A types (avg $(round(total_types_extracted/max(processed_count - unknown_places_filtered,1), digits=2)) types per place)"
+    @info "Places needing primaryType fallback: $(places_with_no_types) ($(round(100*places_with_no_types/max(processed_count - unknown_places_filtered,1), digits=1))%)"
 
     # Convert to GeoTable with proper coordinate system
     if nrow(places_data) > 0
@@ -281,7 +360,7 @@ function process_place_data()::GeoTable
         ]
         places_geo = georef(places_data, points)
 
-        @info "Created GeoTable with $(nrow(places_geo)) places"
+        @info "Created GeoTable with $(nrow(places_geo)) place-type pairs (multi-hot encoded)"
         return places_geo
     else
         error("No valid place data could be processed")
@@ -618,7 +697,7 @@ function map_place_category(primary_type::String)
     end
 end
 
-function process_street_data()
+function process_street_data()::GeoTable
     @info "Processing street data..."
 
     streets_path = joinpath(DATA_DIR, "streets.geojson")

@@ -1,53 +1,142 @@
-function save_results(features::DataFrame, models::Dict{Symbol, Any})::Nothing
-    @info "Saving analysis results..."
+function save_results(features::DataFrame, models::Dict{Symbol, Any}, dataset_name::String)::Nothing
+    @info "Saving analysis results for $dataset_name..."
 
     # Create output directory structure
-    output_data = joinpath(OUTPUT_DIR, "data")
     output_models = joinpath(OUTPUT_DIR, "models")
     output_tables = joinpath(OUTPUT_DIR, "tables")
 
-    mkpath(output_data)
     mkpath(output_models)
     mkpath(output_tables)
 
-    # Save feature matrix
-    features_path = joinpath(output_data, "street_features.csv")
-    CSV.write(features_path, features)
-    @info "Saved feature matrix ($(nrow(features)) streets, $(ncol(features)) columns) to $features_path"
-
     # Generate and save model summaries
     model_summaries = calculate_model_summaries(models)
-    summaries_path = joinpath(output_models, "model_summaries.csv")
+    summaries_path = joinpath(output_models, "$(dataset_name)_model_summaries.csv")
     CSV.write(summaries_path, model_summaries)
     @info "Saved model summaries to $summaries_path"
 
     # Generate and save model coefficients
     model_coefficients = extract_model_coefficients(models)
-    coefficients_path = joinpath(output_models, "model_coefficients.csv")
+    coefficients_path = joinpath(output_models, "$(dataset_name)_model_coefficients.csv")
     CSV.write(coefficients_path, model_coefficients)
     @info "Saved model coefficients to $coefficients_path"
 
     # Generate and save model predictions
     predictions = calculate_model_predictions(models, features)
-    predictions_path = joinpath(output_models, "model_predictions.csv")
+    predictions_path = joinpath(output_models, "$(dataset_name)_model_predictions.csv")
     CSV.write(predictions_path, predictions)
     @info "Saved model predictions to $predictions_path"
 
     # Generate and save performance metrics
     performance = evaluate_model_performance(models, features)
-    performance_path = joinpath(output_models, "model_performance.csv")
+    performance_path = joinpath(output_models, "$(dataset_name)_model_performance.csv")
     CSV.write(performance_path, performance)
     @info "Saved model performance metrics to $performance_path"
 
     # Generate significant predictors summary
     significant_predictors = identify_significant_predictors(model_coefficients)
     if nrow(significant_predictors) > 0
-        predictors_path = joinpath(output_tables, "significant_predictors.csv")
+        predictors_path = joinpath(output_tables, "$(dataset_name)_significant_predictors.csv")
         CSV.write(predictors_path, significant_predictors)
         @info "Saved significant predictors summary to $predictors_path"
     end
 
-    @info "All results saved successfully"
+    # Generate markdown report with model details
+    save_model_markdown_reports(models, dataset_name)
+
+    @info "All results saved successfully for $dataset_name"
+end
+
+"""
+Generate detailed markdown reports for each model showing coefficient tables
+and statistics (mimics console output from GLM.jl).
+"""
+function save_model_markdown_reports(models::Dict{Symbol, Any}, dataset_name::String)::Nothing
+    @info "Generating markdown model reports for $dataset_name..."
+
+    output_models = joinpath(OUTPUT_DIR, "models")
+    mkpath(output_models)
+
+    report_path = joinpath(output_models, "$(dataset_name)_model_reports.md")
+
+    open(report_path, "w") do io
+        println(io, "# Model Results for $(uppercase(dataset_name))")
+        println(io, "\nGenerated: $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))")
+        println(io, "\n---\n")
+
+        for (target_name, model) in sort(collect(models); by=x->String(x[1]))
+            println(io, "## Model: $(target_name)")
+            println(io, "\n### Formula")
+            println(io, "```")
+            println(io, formula(model))
+            println(io, "```")
+
+            println(io, "\n### Coefficients")
+            println(io, "```")
+
+            # Get coefficient table
+            coef_table = coeftable(model)
+
+            # Print header
+            println(io, "$(rpad("Term", 30)) $(lpad("Estimate", 12)) $(lpad("Std.Error", 12)) $(lpad("z value", 10)) $(lpad("Pr(>|z|)", 12))")
+            println(io, "─"^80)
+
+            # Print each coefficient row
+            coef_names = coefnames(model)
+            coef_values = coef(model)
+            std_errors = stderror(model)
+            z_values = coef_values ./ std_errors
+            p_values = coef_table.cols[4]
+
+            for i in 1:length(coef_names)
+                # Add significance stars
+                stars = if p_values[i] < 0.001
+                    "***"
+                elseif p_values[i] < 0.01
+                    "**"
+                elseif p_values[i] < 0.05
+                    "*"
+                elseif p_values[i] < 0.1
+                    "."
+                else
+                    ""
+                end
+
+                println(io,
+                    "$(rpad(coef_names[i], 30)) " *
+                    "$(lpad(round(coef_values[i], digits=6), 12)) " *
+                    "$(lpad(round(std_errors[i], digits=6), 12)) " *
+                    "$(lpad(round(z_values[i], digits=4), 10)) " *
+                    "$(lpad(round(p_values[i], digits=6), 12)) $stars"
+                )
+            end
+
+            println(io, "```")
+            println(io, "\nSignif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
+
+            # Model statistics
+            println(io, "\n### Model Statistics")
+            println(io, "```")
+            println(io, "Deviance: $(round(deviance(model), digits=4))")
+            println(io, "Null Deviance: $(round(nulldeviance(model), digits=4))")
+            println(io, "AIC: $(round(aic(model), digits=4))")
+            println(io, "BIC: $(round(bic(model), digits=4))")
+
+            # McFadden R²
+            null_dev = nulldeviance(model)
+            model_dev = deviance(model)
+            if null_dev > 0
+                mcfadden_r2 = 1 - (model_dev / null_dev)
+                println(io, "McFadden R²: $(round(mcfadden_r2, digits=4))")
+            end
+
+            println(io, "Number of observations: $(nobs(model))")
+            println(io, "```")
+
+            println(io, "\n---\n")
+        end
+    end
+
+    @info "Saved markdown model reports to $report_path"
 end
 
 # =============================================================================
@@ -1597,4 +1686,609 @@ function print_analysis_summary(features::DataFrame, models::Dict{Symbol, Any}):
 
     println("\nOUTPUT SAVED TO: $(OUTPUT_DIR)")
     return println("="^60)
+end
+
+"""
+Save comprehensive spatial matching statistics for reproducibility and documentation.
+
+Creates CSV files and markdown reports documenting:
+- Data quality (invalid coordinates filtered)
+- Distance distributions
+- Match success rates at various thresholds
+
+Saves to: output/spatial_analysis/
+
+# Arguments
+- `initial_count::Int`: Total number of input points before filtering
+- `invalid_count::Int`: Number of points with invalid (0,0) coordinates
+- `valid_count::Int`: Number of valid points that were matched
+- `matched_data::DataFrame`: DataFrame containing matched points with distance_to_street column
+"""
+function save_spatial_matching_statistics(
+    initial_count::Int,
+    invalid_count::Int,
+    valid_count::Int,
+    matched_data::DataFrame
+)
+    @info "Saving spatial matching statistics..."
+
+    spatial_dir = joinpath(OUTPUT_DIR, "spatial_analysis")
+    mkpath(spatial_dir)
+
+    distances = matched_data[!, :distance_to_street]
+
+    # === 1. Summary Statistics CSV ===
+    summary_stats = DataFrame(
+        metric=[
+            "Total Points (Initial)",
+            "Invalid Coordinates (0,0)",
+            "Valid Coordinates",
+            "Percent Valid",
+            "Points Matched",
+            "Mean Distance (m)",
+            "Median Distance (m)",
+            "Std Dev Distance (m)",
+            "Min Distance (m)",
+            "Max Distance (m)",
+            "25th Percentile (m)",
+            "75th Percentile (m)",
+            "95th Percentile (m)",
+            "99th Percentile (m)"
+        ],
+        value=[
+            initial_count,
+            invalid_count,
+            valid_count,
+            round(100 * valid_count / initial_count, digits=2),
+            nrow(matched_data),
+            round(mean(distances), digits=2),
+            round(median(distances), digits=2),
+            round(std(distances), digits=2),
+            round(minimum(distances), digits=2),
+            round(maximum(distances), digits=2),
+            round(quantile(distances, 0.25), digits=2),
+            round(quantile(distances, 0.75), digits=2),
+            round(quantile(distances, 0.95), digits=2),
+            round(quantile(distances, 0.99), digits=2)
+        ]
+    )
+
+    CSV.write(joinpath(spatial_dir, "matching_summary_statistics.csv"), summary_stats)
+    @info "Saved matching summary statistics"
+
+    # === 2. Distance Threshold Analysis CSV ===
+    thresholds = [5, 10, 15, 20, 25, 50, 75, 100, 150, 200, 500]
+    threshold_stats = DataFrame(
+        threshold_meters=Int[],
+        points_within=Int[],
+        percent_within=Float64[],
+        cumulative_points=Int[],
+        cumulative_percent=Float64[]
+    )
+
+    for threshold in thresholds
+        points_within = sum(distances .<= threshold)
+        percent_within = round(100 * points_within / nrow(matched_data), digits=2)
+
+        push!(
+            threshold_stats,
+            (
+                threshold_meters=threshold,
+                points_within=points_within,
+                percent_within=percent_within,
+                cumulative_points=points_within,
+                cumulative_percent=percent_within
+            )
+        )
+    end
+
+    CSV.write(joinpath(spatial_dir, "distance_threshold_analysis.csv"), threshold_stats)
+    @info "Saved distance threshold analysis"
+
+    # === 3. Markdown Report ===
+    report_path = joinpath(spatial_dir, "spatial_matching_report.md")
+
+    open(report_path, "w") do io
+        println(io, "# Spatial Matching Report")
+        timestamp = Dates.format(now(), "yyyy-mm-dd HH:MM:SS")
+        println(io, "\n## Generated: $timestamp")
+
+        println(io, "\n## Data Quality")
+        println(io, "\nThis analysis matched crime/arrest points to street segments using")
+        println(io, "nearest neighbor search with Manhattan (Cityblock) distance in a")
+        println(io, "locally-projected coordinate system (meters).")
+
+        println(io, "\n### Input Data Quality")
+        println(io, "| Metric | Count | Percent |")
+        println(io, "|--------|-------|---------|")
+        println(
+            io,
+            "| Total input points | $initial_count | 100% |"
+        )
+        println(
+            io,
+            "| Invalid coordinates (0,0) | $invalid_count | $(round(100*invalid_count/initial_count, digits=2))% |"
+        )
+        println(
+            io,
+            "| Valid points matched | $valid_count | $(round(100*valid_count/initial_count, digits=2))% |"
+        )
+
+        println(io, "\n**Note:** Invalid (0,0) coordinates were filtered before matching.")
+        println(io, "These represent incidents where NYPD did not successfully geocode the location.")
+
+        println(io, "\n## Distance Distribution")
+        println(io, "\n### Summary Statistics (meters)")
+        println(io, "| Statistic | Value |")
+        println(io, "|-----------|-------|")
+        println(io, "| Mean | $(round(mean(distances), digits=1)) |")
+        println(io, "| Median | $(round(median(distances), digits=1)) |")
+        println(io, "| Std Dev | $(round(std(distances), digits=1)) |")
+        println(io, "| Min | $(round(minimum(distances), digits=1)) |")
+        println(io, "| Max | $(round(maximum(distances), digits=1)) |")
+        println(io, "| 25th percentile | $(round(quantile(distances, 0.25), digits=1)) |")
+        println(io, "| 75th percentile | $(round(quantile(distances, 0.75), digits=1)) |")
+        println(io, "| 95th percentile | $(round(quantile(distances, 0.95), digits=1)) |")
+        println(io, "| 99th percentile | $(round(quantile(distances, 0.99), digits=1)) |")
+
+        println(io, "\n## Match Quality by Distance Threshold")
+        println(io, "\nThe table below shows how many matched points fall within various")
+        println(io, "distance thresholds from their nearest street segment centroid.")
+
+        println(io, "\n| Threshold (m) | Points Within | % of Valid | Interpretation |")
+        println(io, "|---------------|---------------|------------|----------------|")
+
+        interpretations = Dict(
+            5 => "Excellent match - virtually on the street",
+            10 => "Very good match - typical geocoding accuracy",
+            25 => "Good match - reasonable geocoding tolerance",
+            50 => "Acceptable match - may include nearby parallel streets",
+            100 => "Loose match - could be cross-street or block distance",
+            200 => "Very loose - potential geocoding issues",
+            500 => "Questionable - likely geocoding errors"
+        )
+
+        for row in eachrow(threshold_stats)
+            interp = get(interpretations, row.threshold_meters, "")
+            println(
+                io,
+                "| $(row.threshold_meters) | $(row.points_within) | $(row.percent_within)% | $interp |"
+            )
+        end
+
+        println(io, "\n## Methodology Notes")
+        println(io, "\n### Coordinate System")
+        println(io, "- **Projection:** Local tangent plane at 40.75°N (Manhattan center)")
+        println(io, "- **Meters per degree (lat):** 111,320 m")
+        println(
+            io,
+            "- **Meters per degree (lon):** ~84,400 m (adjusted for latitude using cos)"
+        )
+
+        println(io, "\n### Distance Metric")
+        println(io, "- **Metric:** Manhattan/Cityblock distance")
+        println(io, "- **Rationale:** Appropriate for urban street grid navigation")
+        println(io, "- **Calculation:** |Δx| + |Δy| in projected meters")
+
+        println(io, "\n### Matching Strategy")
+        println(io, "- **Target:** Street segment centroids")
+        println(io, "- **Algorithm:** KD-tree nearest neighbor search")
+        println(io, "- **Output:** Each point matched to nearest street segment")
+
+        println(io, "\n## Recommendations for Analysis")
+        println(io, "\nBased on the distance distribution:")
+
+        median_dist = median(distances)
+        pct_95 = quantile(distances, 0.95)
+
+        if median_dist <= 10
+            println(io, "\n✓ **Excellent geocoding quality** (median ≤ 10m)")
+            println(io, "  - Majority of points geocoded to street centroids")
+            println(io, "  - Safe to use 10-25m threshold for analysis")
+        elseif median_dist <= 25
+            println(io, "\n⚠ **Good geocoding quality** (median ≤ 25m)")
+            println(io, "  - Most points reasonably close to streets")
+            println(io, "  - Consider 25-50m threshold for analysis")
+        else
+            println(io, "\n⚠ **Variable geocoding quality** (median > 25m)")
+            println(io, "  - Review distance distribution carefully")
+            println(io, "  - May need relaxed thresholds or additional cleaning")
+        end
+
+        println(io, "\n**Suggested filtering threshold:** $(round(pct_95, digits=1))m (95th percentile)")
+        println(
+            io,
+            "This would retain 95% of matched points while filtering potential outliers."
+        )
+    end
+
+    @info "Saved spatial matching report to: $report_path"
+
+    return nothing
+end
+
+"""
+    save_comparison_by_method(comparison_df::DataFrame, dataset_name::String)::Nothing
+
+Create organized summaries of model comparisons grouped by target method (top25, top50, jenks).
+
+This supports the dissertation paper structure where results are presented by threshold
+method, with each section comparing the 4 crime types to see which feature complexity
+level (counts, interactions, PCA) performs best.
+
+Generates markdown files organized by target method for easy paper writing.
+"""
+function save_comparison_by_method(comparison_df::DataFrame, dataset_name::String)::Nothing
+    output_models = joinpath(OUTPUT_DIR, "models")
+    mkpath(output_models)
+
+    # Handle case where all models failed
+    if nrow(comparison_df) == 0
+        @warn "No comparisons available for by-method analysis - skipping"
+        return nothing
+    end
+
+    # Extract target method from target name (e.g., "high_larceny_top25" -> "top25")
+    comparison_df[!, :method] = [split(t, "_")[end] for t in comparison_df.target]
+    comparison_df[!, :crime_type] = [uppercase(split(t, "_")[2]) for t in comparison_df.target]
+
+    # Create overall summary grouped by method
+    md_path = joinpath(output_models, "$(dataset_name)_comparison_by_method.md")
+
+    open(md_path, "w") do io
+        println(io, "# Model Comparison by Target Method: $(uppercase(dataset_name))")
+        println(io, "\nGenerated: $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))")
+        println(io, "\n---\n")
+
+        println(io, "## Paper Organization Guide")
+        println(io, "\nThis report organizes results by threshold method (top25, top50, jenks)")
+        println(io, "to support a paper structure with sections for each method.")
+        println(io, "\nFor each method, we compare:")
+        println(io, "- Which feature complexity level works best (counts, interactions, or PCA)")
+        println(io, "- Performance across all 4 crime types")
+        println(io, "- AIC improvements over baseline (counts-only models)")
+
+        # Get unique methods and sort
+        methods = sort(unique(comparison_df.method))
+
+        for method in methods
+            method_data = filter(row -> row.method == method, comparison_df)
+
+            println(io, "\n---\n")
+            println(io, "## $(uppercase(method)) Models")
+            println(io, "\n### Overview")
+
+            # Count wins by feature type
+            counts_wins = sum(method_data.best_model .== "counts")
+            interact_wins = sum(method_data.best_model .== "interactions")
+            pca_wins = sum(method_data.best_model .== "pca")
+
+            println(io, "\n**Winner distribution for $(method):**")
+            println(io, "- Counts-only (RQ2): $counts_wins / $(nrow(method_data)) models")
+            println(io, "- Interactions (RQ3a): $interact_wins / $(nrow(method_data)) models")
+            println(io, "- PCA (RQ3b): $pca_wins / $(nrow(method_data)) models")
+
+            # Detailed table by crime type
+            println(io, "\n### Results by Crime Type")
+            println(io, "\n| Crime Type | Best Model | Counts AIC | Interactions AIC | PCA AIC | AIC Improvement (Interactions) | AIC Improvement (PCA) | Counts R² | Interactions R² | PCA R² |")
+            println(io, "|------------|------------|------------|------------------|---------|-------------------------------|---------------------|-----------|-----------------|--------|")
+
+            for row in eachrow(sort(method_data, :crime_type))
+                winner_marker = "**$(row.best_model)**"
+                println(io,
+                    "| $(row.crime_type) | $winner_marker | " *
+                    "$(round(row.counts_aic, digits=1)) | " *
+                    "$(round(row.interactions_aic, digits=1)) | " *
+                    "$(round(row.pca_aic, digits=1)) | " *
+                    "$(round(row.aic_improvement_interactions, digits=1)) | " *
+                    "$(round(row.aic_improvement_pca, digits=1)) | " *
+                    "$(round(row.counts_r2, digits=3)) | " *
+                    "$(round(row.interactions_r2, digits=3)) | " *
+                    "$(round(row.pca_r2, digits=3)) |"
+                )
+            end
+
+            # Interpretation for this method
+            println(io, "\n### Interpretation for $(uppercase(method))")
+
+            if counts_wins == nrow(method_data)
+                println(io, "\n**All crimes: Counts-only models dominate** - Simple place type counts are sufficient.")
+                println(io, "\nFor $(method) threshold, complex feature engineering (interactions or PCA) does not")
+                println(io, "improve model performance. Policy implication: Focus on individual facility types.")
+            elseif interact_wins == nrow(method_data)
+                println(io, "\n**All crimes: Interaction models dominate** - Place combinations matter.")
+                println(io, "\nFor $(method) threshold, pairwise facility combinations significantly improve predictions")
+                println(io, "beyond simple counts. Policy implication: Consider co-location patterns (e.g., bars + nightclubs).")
+            elseif pca_wins == nrow(method_data)
+                println(io, "\n**All crimes: PCA models dominate** - Latent patterns are critical.")
+                println(io, "\nFor $(method) threshold, complex latent dimensions from raw place types best capture")
+                println(io, "crime patterns. Policy implication: Nuanced analysis required for interventions.")
+            else
+                println(io, "\n**Mixed results across crime types:**")
+
+                # Summarize by crime type
+                for crime_type in sort(unique(method_data.crime_type))
+                    crime_row = filter(row -> row.crime_type == crime_type, method_data)[1, :]
+                    improvement_interact = crime_row.aic_improvement_interactions
+                    improvement_pca = crime_row.aic_improvement_pca
+
+                    println(io, "\n- **$(crime_type)**: $(crime_row.best_model) performs best")
+
+                    if crime_row.best_model == "counts"
+                        println(io, "  - Simple counts are sufficient (interactions worse by $(round(-improvement_interact, digits=1)) AIC, PCA worse by $(round(-improvement_pca, digits=1)) AIC)")
+                    elseif crime_row.best_model == "interactions"
+                        println(io, "  - Interactions improve over counts by $(round(improvement_interact, digits=1)) AIC")
+                    else
+                        println(io, "  - PCA improves over counts by $(round(improvement_pca, digits=1)) AIC")
+                    end
+                end
+
+                println(io, "\nPolicy implication: Different crime types require different analytical approaches for $(method) threshold.")
+            end
+        end
+
+        println(io, "\n---\n")
+        println(io, "## Cross-Method Summary")
+        println(io, "\nThis table shows which feature type dominates for each crime type across all threshold methods:")
+        println(io, "\n| Crime Type | Top25 Winner | Top50 Winner | Jenks Winner | Consistency |")
+        println(io, "|------------|--------------|--------------|--------------|-------------|")
+
+        # Get unique crime types
+        crime_types = sort(unique(comparison_df.crime_type))
+
+        for crime_type in crime_types
+            crime_data = filter(row -> row.crime_type == crime_type, comparison_df)
+
+            top25_winner = nrow(filter(r -> r.method == "top25", crime_data)) > 0 ?
+                filter(r -> r.method == "top25", crime_data)[1, :best_model] : "N/A"
+            top50_winner = nrow(filter(r -> r.method == "top50", crime_data)) > 0 ?
+                filter(r -> r.method == "top50", crime_data)[1, :best_model] : "N/A"
+            jenks_winner = nrow(filter(r -> r.method == "jenks", crime_data)) > 0 ?
+                filter(r -> r.method == "jenks", crime_data)[1, :best_model] : "N/A"
+
+            # Check consistency
+            winners = [top25_winner, top50_winner, jenks_winner]
+            winners = filter(w -> w != "N/A", winners)
+            consistency = length(unique(winners)) == 1 ? "✓ Consistent" : "Mixed"
+
+            println(io, "| $crime_type | $top25_winner | $top50_winner | $jenks_winner | $consistency |")
+        end
+
+        println(io, "\n### Key Findings")
+        println(io, "\nCrime types with **consistent** winners across all thresholds suggest robust feature")
+        println(io, "relationships that are not threshold-dependent. Mixed results suggest that the choice")
+        println(io, "of threshold method influences which features matter most.")
+    end
+
+    @info "Saved comparison by method to: $md_path"
+
+    return nothing
+end
+
+"""
+    save_model_comparison(comparison_df::DataFrame, dataset_name::String)::Nothing
+
+Save model comparison results to CSV and generate markdown summary.
+
+Creates:
+- output/models/[dataset]_model_comparison.csv: Full comparison table
+- output/models/[dataset]_model_comparison.md: Readable summary with interpretation
+"""
+function save_model_comparison(comparison_df::DataFrame, dataset_name::String)::Nothing
+    output_models = joinpath(OUTPUT_DIR, "models")
+    mkpath(output_models)
+
+    # Handle case where all models failed
+    if nrow(comparison_df) == 0
+        @warn "No successful model comparisons for $dataset_name - all models failed to converge"
+
+        # Still save empty CSV
+        csv_path = joinpath(output_models, "$(dataset_name)_model_comparison.csv")
+        CSV.write(csv_path, comparison_df)
+
+        # Write failure report
+        md_path = joinpath(output_models, "$(dataset_name)_model_comparison.md")
+        open(md_path, "w") do io
+            println(io, "# Hierarchical Model Comparison: $(uppercase(dataset_name))")
+            println(io, "\nGenerated: $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))")
+            println(io, "\n---\n")
+            println(io, "## ⚠️ All Models Failed")
+            println(io, "\nNo successful model comparisons were generated because all three model types")
+            println(io, "(counts, interactions, PCA) failed to converge for all targets.")
+            println(io, "\nThis typically indicates:")
+            println(io, "- Perfect multicollinearity in predictor features")
+            println(io, "- Insufficient data (too few positive outcomes)")
+            println(io, "- Numerical instability in model fitting")
+            println(io, "\nCheck the log output for specific error messages.")
+        end
+
+        @info "Saved failure report to: $md_path"
+        return nothing
+    end
+
+    # Save CSV
+    csv_path = joinpath(output_models, "$(dataset_name)_model_comparison.csv")
+    CSV.write(csv_path, comparison_df)
+    @info "Saved model comparison to: $csv_path"
+
+    # Generate markdown summary
+    md_path = joinpath(output_models, "$(dataset_name)_model_comparison.md")
+    open(md_path, "w") do io
+        println(io, "# Hierarchical Model Comparison: $(uppercase(dataset_name))")
+        println(io, "\nGenerated: $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))")
+        println(io, "\n---\n")
+
+        println(io, "## Research Question Framework")
+        println(io, "\nThis analysis tests three levels of feature complexity:")
+        println(io, "1. **RQ2: Counts** - Can simple place type counts predict crime?")
+        println(io, "2. **RQ3a: Interactions** - Do place combinations add predictive power?")
+        println(io, "3. **RQ3b: PCA** - Do latent patterns improve predictions?")
+
+        println(io, "\n## Performance Summary")
+
+        counts_wins = sum(comparison_df.best_model .== "counts")
+        interact_wins = sum(comparison_df.best_model .== "interactions")
+        pca_wins = sum(comparison_df.best_model .== "pca")
+        total = nrow(comparison_df)
+
+        println(io, "\n| Feature Type | Models Won | Percentage |")
+        println(io, "|--------------|------------|------------|")
+        println(io, "| Counts (RQ2) | $counts_wins | $(round(100*counts_wins/total, digits=1))% |")
+        println(io, "| Interactions (RQ3a) | $interact_wins | $(round(100*interact_wins/total, digits=1))% |")
+        println(io, "| PCA (RQ3b) | $pca_wins | $(round(100*pca_wins/total, digits=1))% |")
+
+        println(io, "\n## Detailed Results")
+        println(io, "\n| Target | Best Model | Counts AIC | Interactions AIC | PCA AIC | Counts R² | Interactions R² | PCA R² |")
+        println(io, "|--------|------------|------------|------------------|---------|-----------|-----------------|--------|")
+
+        for row in eachrow(comparison_df)
+            println(io,
+                "| $(row.target) | **$(row.best_model)** | " *
+                "$(round(row.counts_aic, digits=1)) | " *
+                "$(round(row.interactions_aic, digits=1)) | " *
+                "$(round(row.pca_aic, digits=1)) | " *
+                "$(round(row.counts_r2, digits=3)) | " *
+                "$(round(row.interactions_r2, digits=3)) | " *
+                "$(round(row.pca_r2, digits=3)) |"
+            )
+        end
+
+        println(io, "\n## Interpretation")
+        if counts_wins > interact_wins && counts_wins > pca_wins
+            println(io, "\n**Simple features dominate**: Place type counts alone predict crime hot spots.")
+            println(io, "Policy implication: Focus on individual facility types, not complex combinations.")
+        elseif interact_wins > counts_wins && interact_wins > pca_wins
+            println(io, "\n**Moderate complexity wins**: Place combinations matter beyond simple counts.")
+            println(io, "Policy implication: Consider facility co-location patterns (e.g., bars + nightclubs).")
+        elseif pca_wins > counts_wins && pca_wins > interact_wins
+            println(io, "\n**Complex patterns dominate**: Latent dimensions from raw place types best predict crime.")
+            println(io, "Policy implication: Nuanced patterns require sophisticated analysis.")
+        else
+            println(io, "\n**Mixed results**: Different crime types respond to different complexity levels.")
+            println(io, "Policy implication: Tailor interventions to specific crime patterns.")
+        end
+    end
+
+    @info "Saved model comparison summary to: $md_path"
+    return nothing
+end
+
+"""
+    compare_all_models(incident_models, arrest_models)
+
+Comprehensive comparison across all 96 models:
+
+  - Model types (base vs interactions vs PCA)
+  - Target methods (top25, top50, median, jenks)
+  - Crime types (4 categories)
+  - Dataset types (incidents vs arrests)
+
+Generates detailed comparison reports and visualizations.
+"""
+function compare_all_models(
+    incident_models::Dict{String, Any}, arrest_models::Dict{String, Any}
+)
+    @info "Running comprehensive model comparisons (96 models)..."
+
+    comparison_dir = joinpath(OUTPUT_DIR, "model_comparison")
+    mkpath(comparison_dir)
+
+    # Combine all models for analysis
+    all_models = merge(incident_models, arrest_models)
+
+    # Parse model names to extract components
+    model_data = DataFrame(;
+        model_name = String[],
+        dataset = String[],
+        crime_type = String[],
+        target_method = String[],
+        model_type = String[],
+        aic = Float64[],
+        bic = Float64[],
+        mcfadden_r2 = Float64[],
+        deviance = Float64[],
+        null_deviance = Float64[]
+    )
+
+    for (name, model) in all_models
+        # Parse name: "incidents_high_larceny_top25_base"
+        parts = split(name, "_")
+        if length(parts) >= 5
+            dataset = parts[1]  # incidents or arrests
+            # Skip "high"
+            crime = parts[3]  # larceny, violence, etc.
+            target = parts[4]  # top25, top50, median, jenks
+            mtype = parts[end]  # base, interactions, pca
+
+            push!(
+                model_data,
+                (
+                    name,
+                    dataset,
+                    crime,
+                    target,
+                    mtype,
+                    aic(model),
+                    bic(model),
+                    1 - deviance(model) / nulldeviance(model),  # McFadden R²
+                    deviance(model),
+                    nulldeviance(model)
+                )
+            )
+        end
+    end
+
+    # Save comprehensive model comparison
+    CSV.write(joinpath(comparison_dir, "all_models_comparison.csv"), model_data)
+    @info "Saved comprehensive model comparison to: $(comparison_dir)/all_models_comparison.csv"
+
+    # 1. Compare model types
+    @info "  Comparing model types (base vs interactions vs PCA)..."
+    model_type_summary = combine(
+        groupby(model_data, [:dataset, :model_type]),
+        :aic => mean => :mean_aic,
+        :mcfadden_r2 => mean => :mean_r2,
+        nrow => :n_models
+    )
+    CSV.write(joinpath(comparison_dir, "model_type_comparison.csv"), model_type_summary)
+
+    # 2. Compare target methods
+    @info "  Comparing target methods (top25, top50, median, jenks)..."
+    target_method_summary = combine(
+        groupby(model_data, [:dataset, :target_method]),
+        :aic => mean => :mean_aic,
+        :mcfadden_r2 => mean => :mean_r2,
+        nrow => :n_models
+    )
+    CSV.write(
+        joinpath(comparison_dir, "target_method_comparison.csv"), target_method_summary
+    )
+
+    # 3. Compare crime types
+    @info "  Comparing crime types..."
+    crime_type_summary = combine(
+        groupby(model_data, [:dataset, :crime_type]),
+        :aic => mean => :mean_aic,
+        :mcfadden_r2 => mean => :mean_r2,
+        nrow => :n_models
+    )
+    CSV.write(joinpath(comparison_dir, "crime_type_comparison.csv"), crime_type_summary)
+
+    # 4. Find best models
+    @info "  Identifying best models by AIC..."
+    best_by_crime = combine(groupby(model_data, [:dataset, :crime_type])) do df
+        best_idx = argmin(df.aic)
+        return df[best_idx, :]
+    end
+    CSV.write(joinpath(comparison_dir, "best_models_by_crime.csv"), best_by_crime)
+
+    @info "  ✓ Model comparison complete - results saved to $comparison_dir"
+
+    return Dict(
+        :all_models => model_data,
+        :model_types => model_type_summary,
+        :target_methods => target_method_summary,
+        :crime_types => crime_type_summary,
+        :best_models => best_by_crime
+    )
 end

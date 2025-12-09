@@ -1,0 +1,15 @@
+metric,value
+Total Points (Initial),32982.0
+"Invalid Coordinates (0,0)",96.0
+Valid Coordinates,32886.0
+Percent Valid,99.71
+Points Matched,32886.0
+Mean Distance (m),15.33
+Median Distance (m),3.01
+Std Dev Distance (m),23.7
+Min Distance (m),0.0
+Max Distance (m),1961.01
+25th Percentile (m),0.06
+75th Percentile (m),23.3
+95th Percentile (m),57.16
+99th Percentile (m),81.18

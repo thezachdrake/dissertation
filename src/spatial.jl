@@ -5,13 +5,38 @@ function match_points_to_streets(points_geo::GeoTable, streets_geo::GeoTable)::D
     # Convert point geometries to coordinates
     point_coords = [coords(geom) for geom in points_geo.geometry]
 
+    # Filter out invalid (0,0) coordinates
+    valid_indices = [
+        i for (i, coord) in enumerate(point_coords) if
+        !(abs(ustrip(coord.lat)) < 0.001 && abs(ustrip(coord.lon)) < 0.001)
+    ]
+
+    initial_count = length(point_coords)
+    valid_count = length(valid_indices)
+    invalid_count = initial_count - valid_count
+
+    if invalid_count > 0
+        @warn "Filtered out $invalid_count points with invalid (0,0) coordinates"
+        @info "Data quality: $(round(100 * valid_count / initial_count, digits=2))% of points have valid coordinates"
+    end
+
     # For streets, use centroid of each segment for matching
     street_centroids = [coords(centroid(geom)) for geom in streets_geo.geometry]
 
+    # Reference latitude for NYC (used for lon->meters conversion)
+    lat_ref = 40.75  # Manhattan is roughly centered at 40.75°N
+    meters_per_degree_lat = 111320.0
+    meters_per_degree_lon = meters_per_degree_lat * cos(deg2rad(lat_ref))
+
     # Build spatial index for efficient nearest neighbor search
-    # Convert to [lon, lat] format expected by NearestNeighbors.jl
-    street_points = [[ustrip(c.lon), ustrip(c.lat)] for c in street_centroids]
-    tree = KDTree(reduce(hcat, street_points), Cityblock())
+    # Convert coordinates to meters using local projection
+    street_points_meters = [
+        [
+            ustrip(c.lon) * meters_per_degree_lon,  # x in meters
+            ustrip(c.lat) * meters_per_degree_lat    # y in meters
+        ] for c in street_centroids
+    ]
+    tree = KDTree(reduce(hcat, street_points_meters), Cityblock())
 
     # Prepare output DataFrame
     points_df = DataFrame(points_geo)
@@ -19,15 +44,19 @@ function match_points_to_streets(points_geo::GeoTable, streets_geo::GeoTable)::D
 
     matched_rows = []
 
-    @info "Performing spatial matching..."
+    @info "Performing spatial matching on $(length(valid_indices)) valid points..."
 
-    for (i, point_coord) in enumerate(point_coords)
-        # Convert point to search format
-        query_point = [ustrip(point_coord.lon), ustrip(point_coord.lat)]
+    for i in valid_indices
+        point_coord = point_coords[i]
 
-        # Find nearest street
-        nearest_idx, distance_squared = nn(tree, query_point)
-        distance_meters = sqrt(distance_squared) * 111320  # Approximate conversion to meters
+        # Convert point to meters using same projection
+        query_point_meters = [
+            ustrip(point_coord.lon) * meters_per_degree_lon,
+            ustrip(point_coord.lat) * meters_per_degree_lat
+        ]
+
+        # Find nearest street (distance is already in meters with Cityblock metric)
+        nearest_idx, distance_meters = nn(tree, query_point_meters)
 
         # Get original point data
         point_row = points_df[i, :]
@@ -50,6 +79,11 @@ function match_points_to_streets(points_geo::GeoTable, streets_geo::GeoTable)::D
 
     @info "Successfully matched $(nrow(matched_data)) points to streets"
     @info "Average distance to street: $(round(mean(matched_data[!, :distance_to_street]), digits=1)) meters"
+
+    # Save comprehensive matching statistics (function in output.jl)
+    save_spatial_matching_statistics(
+        initial_count, invalid_count, valid_count, matched_data
+    )
 
     return matched_data
 end
@@ -131,7 +165,7 @@ function filter_points_by_distance(
     initial_count = nrow(matched_data)
 
     filtered_data = filter(
-        row -> row[!, :distance_to_street] <= max_distance_meters, matched_data
+        row -> row.distance_to_street <= max_distance_meters, matched_data
     )
 
     removed_count = initial_count - nrow(filtered_data)

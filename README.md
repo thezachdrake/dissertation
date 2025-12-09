@@ -508,7 +508,6 @@ Which threshold definition works best for identifying crime hot spots?
 **Four Methods Tested**:
 - `top25`: Highest crime streets accounting for 25% of crime (cumulative proportion)
 - `top50`: Highest crime streets accounting for 50% of crime (cumulative proportion)
-- `median`: Streets above median crime count
 - `jenks`: Streets above Jenks natural break (data-driven clustering)
 
 Example for LARCENY:
@@ -579,60 +578,4 @@ The hierarchical design tests: **How deep do we need to go to find effects?**
 - **Incidents vs Arrests**: Does enforcement respond to different patterns than occurrence?
 - **Crime types**: Do different crimes show different facility associations?
 
----
 
-## Code TODOs (Implementation Gaps)
-
-### High Priority
-
-1. **Missing Feature-Specific Model Functions** (`src/modeling.jl`)
-   - Need: `fit_logistic_models_counts()` - counts only
-   - Need: `fit_logistic_models_interactions()` - interactions only
-   - Need: `fit_logistic_models_pca()` - PCA only
-   - Need: `compare_all_model_variants()` - comprehensive comparison
-
-2. **Function Signature Mismatches** (`src/pipeline.jl`)
-   - `calculate_spatial_statistics()` called WITHOUT `dataset_name` parameter (lines 114, 120, 125)
-   - Should be: `calculate_spatial_statistics(data, "dataset_name")`
-
-3. **Missing Constant** (`src/features.jl`)
-   - Line 228 references `MODELING_CRIME_CATEGORIES`
-   - Should use `CRIME_CATEGORIES` (defined in `src/Dissertation.jl:40`)
-
-4. **Inconsistent Parameter Handling** (`src/features.jl` vs `src/pipeline.jl`)
-   - `create_target_variables!()` hardcodes methods inside function (line 223)
-   - But pipeline.jl passes `target_methods` parameter (lines 165, 170)
-   - Pick one approach and be consistent
-
-### Medium Priority
-
-5. **Remove Deprecated Three-Way Comparison** (`src/pipeline.jl`)
-   - Lines 205-506: Three-way interaction comparison (base vs interact-only vs full)
-   - This logic should be removed - interactions are always included now
-
-6. **Function Doesn't Exist** (`src/pipeline.jl`)
-   - Lines 535, 540: Calls `create_street_features_pca()`
-   - This function doesn't exist anywhere in codebase
-   - PCA is now integrated into `create_street_features()` automatically
-
-### Low Priority
-
-7. **API Key Name Documentation**
-   - Update all docs/comments that reference `SODA_KEY`
-   - Should be `SODA_APP_TOKEN` (changed for new API version)
-
----
-
-## Notes
-
-- The `src/pipeline.jl` file is **out of date** and should not be used
-- Run this analysis **step-by-step in the REPL**
-- Every step saves outputs - no separate "save all" step needed
-- PCA and interactions are **core features**, not optional add-ons
-- All 4 target methods are **always** created for methodological comparison
-
----
-
-## Citation
-
-[Add your paper citation here]

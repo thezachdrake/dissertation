@@ -11,6 +11,7 @@ using Meshes, CoordRefSystems
 using Distances, NearestNeighbors
 
 using StatsBase, StatsModels, GLM
+using LinearAlgebra
 using CategoricalArrays, Chain, Missings
 using MultivariateStats, Distributions
 
@@ -58,9 +59,10 @@ include("modeling.jl")         # RQ2&3: Logistic regression models
 # Output layer - results and visualization
 include("output.jl")           # Tables, figures, summary reports
 
-# Orchestration layer - workflow management
-include("run.jl") # Main run() function coordinating all analyses
+# Sensitivity analysis layer - robustness testing
+include("sensitivity.jl")      # Jaccard threshold, PCA diagnostics
 
-export run
+#pipeline functions
+include("pipeline.jl")
 
 end # module Dissertation

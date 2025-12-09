@@ -1,6 +1,11 @@
 
 function create_street_features(
-    crime_matched, place_matched, streets_geo, dataset_name::String
+    crime_matched,
+    place_matched,
+    streets_geo,
+    dataset_name::String;
+    cooccurrence_pairs::Union{DataFrame,Nothing} = nothing,
+    jaccard_threshold::Float64 = 0.80
 )
     @info "Creating street-level feature matrix for $dataset_name..."
 
@@ -114,9 +119,14 @@ function create_street_features(
 
     @info "Created base feature matrix with $(nrow(features)) streets and $(ncol(features)) features"
 
-    # ALWAYS add interaction terms (routine activities theory)
+    # Add interaction terms (routine activities theory)
     @info "Adding place type interactions (routine activities theory)..."
-    add_place_type_interactions!(features; standardize = true)
+    add_place_type_interactions!(
+        features;
+        standardize = true,
+        cooccurrence_pairs = cooccurrence_pairs,
+        jaccard_threshold = jaccard_threshold
+    )
 
     # Log feature summary
     @info "Feature summary for $dataset_name:"
@@ -127,30 +137,45 @@ function create_street_features(
     @info "  Streets with places: $(sum(features.total_places .> 0))"
     @info "  Streets with both: $(sum((features.total_crime .> 0) .& (features.total_places .> 0)))"
 
-    # Save feature engineering report
+    # Add PCA components from raw place types BEFORE saving
+    @info "Adding PCA components from raw place types..."
+    pca_result = add_pca_components!(features, place_matched)
+
+    # Save feature engineering report (now includes PC columns!)
     features_dir = joinpath(OUTPUT_DIR, "features")
     mkpath(features_dir)
 
-    # Save feature matrix
+    # Save feature matrix - now has complete features with PC components
     CSV.write(joinpath(features_dir, "$(dataset_name)_features.csv"), features)
     @info "Saved feature matrix to: $(features_dir)/$(dataset_name)_features.csv"
 
-    # Add PCA components from raw place types
-    @info "Adding PCA components from raw place types..."
-    add_pca_components!(features, place_matched)
-
-    return features
+    # Return both features and PCA result for downstream use
+    return (features = features, pca_result = pca_result)
 end
 
-function add_pca_components!(
-    features::DataFrame,
-    place_matched::DataFrame,
-    max_components::Int = 50,
-    variance_threshold::Float64 = 0.95
+"""
+    fit_pca_model(place_matched::DataFrame; max_components=10, variance_threshold=0.99)
+
+Fit PCA model on place type counts. This is the SINGLE SOURCE OF TRUTH for PCA.
+
+Used by both:
+- Feature engineering (create_street_features)
+- Sensitivity analysis (diagnose_pca_components, jaccard sensitivity)
+
+Returns a named tuple with:
+- pca_model: Fitted MultivariateStats.PCA object
+- transformed_components: PCA scores (n_streets × n_components)
+- raw_type_columns: Place type names (for loading interpretation)
+- place_type_matrix: Input matrix for debugging (standardized)
+"""
+function fit_pca_model(
+    place_matched::DataFrame;
+    max_components::Int = 10,
+    variance_threshold::Float64 = 0.99
 )
     if !("raw_type" in names(place_matched))
         @warn "No raw_type column in place_matched - skipping PCA"
-        return features
+        return nothing
     end
 
     raw_place_by_street = combine(
@@ -167,24 +192,38 @@ function add_pca_components!(
 
     if length(raw_type_columns) < 3
         @warn "Insufficient raw place types for PCA (need at least 3) - skipping"
-        return features
+        return nothing
     end
 
-    place_type_matrix = Matrix(raw_place_types_wide[!, raw_type_columns])'
+    # Convert to Float64 matrix for standardization (StatsBase requires Float type)
+    place_type_matrix = Float64.(Matrix(raw_place_types_wide[!, raw_type_columns])')
+
+    # Standardize place type counts before PCA (z-score normalization)
+    # This ensures all place types contribute equally regardless of their frequency
+    # Without standardization, high-count types (e.g., max 1,217) dominate low-count types
+    @info "Standardizing place type counts before PCA (z-score transformation)..."
+    standardized_matrix = StatsBase.standardize(StatsBase.ZScoreTransform, place_type_matrix; dims=2)
+
+    # Log standardization impact
+    original_variances = [var(place_type_matrix[i, :]) for i in 1:size(place_type_matrix, 1)]
+    standardized_variances = [var(standardized_matrix[i, :]) for i in 1:size(standardized_matrix, 1)]
+    @info "Standardization complete:"
+    @info "  Original variance range: $(round(minimum(original_variances), digits=2)) to $(round(maximum(original_variances), digits=2))"
+    @info "  Standardized variance range: $(round(minimum(standardized_variances), digits=2)) to $(round(maximum(standardized_variances), digits=2))"
 
     components_limit = min(
-        max_components, size(place_type_matrix, 1) - 1, size(place_type_matrix, 2) - 1
+        max_components, size(standardized_matrix, 1) - 1, size(standardized_matrix, 2) - 1
     )
 
     pca_model = fit(
         MultivariateStats.PCA,
-        place_type_matrix;
+        standardized_matrix;
         maxoutdim = components_limit,
         pratio = variance_threshold
     )
 
     components_retained = size(pca_model, 2)
-    transformed_components = predict(pca_model, place_type_matrix)'
+    transformed_components = predict(pca_model, standardized_matrix)'
 
     @info "PCA retained $(components_retained) components explaining $(round(principalratio(pca_model)*100, digits=1))% of variance"
 
@@ -198,15 +237,61 @@ function add_pca_components!(
         @info "  PC_$(component_index) explains $(variance_percent)% of variance"
     end
 
-    pca_components_df = DataFrame(; street_id = raw_place_types_wide.street_id)
-    for component_index = 1:components_retained
-        pca_components_df[!, "PC_$(component_index)"] = transformed_components[
-            :, component_index
-        ]
+    # Return all information needed for reuse
+    return (
+        pca_model = pca_model,
+        transformed_components = transformed_components,
+        raw_type_columns = raw_type_columns,
+        place_type_matrix = standardized_matrix,
+        street_ids = raw_place_types_wide.street_id
+    )
+end
+
+function add_pca_components!(
+    features::DataFrame,
+    place_matched::DataFrame,
+    max_components::Int = 10,
+    variance_threshold::Float64 = 0.99
+)::Union{Nothing, NamedTuple}
+    # Use shared function to fit PCA (single source of truth)
+    pca_result = fit_pca_model(
+        place_matched;
+        max_components = max_components,
+        variance_threshold = variance_threshold
+    )
+
+    if pca_result === nothing
+        return nothing
     end
 
-    features = leftjoin(features, pca_components_df; on = :street_id)
+    # Extract results from shared function
+    transformed_components = pca_result.transformed_components
+    street_ids = pca_result.street_ids
+    components_retained = size(transformed_components, 2)
 
+    # Build DataFrame with PC components and street IDs
+    pca_components_df = DataFrame(; street_id = street_ids)
+    for component_index = 1:components_retained
+        pca_components_df[!, "PC_$(component_index)"] = transformed_components[:, component_index]
+    end
+
+    # Add PCA components directly to features DataFrame (in-place modification)
+    for col in names(pca_components_df)
+        if col != "street_id"
+            # Create lookup dictionary for this component
+            street_id_map = Dict(
+                pca_components_df[i, :street_id] => pca_components_df[i, col]
+                for i in 1:nrow(pca_components_df)
+            )
+
+            # Add column to features by looking up values
+            features[!, col] = [
+                get(street_id_map, street_id, missing) for street_id in features.street_id
+            ]
+        end
+    end
+
+    # Handle missing values (streets with no places get 0.0 for all components)
     for col in names(features)
         if startswith(String(col), "PC_") && eltype(features[!, col]) >: Missing
             features[!, col] = coalesce.(features[!, col], 0.0)
@@ -215,18 +300,20 @@ function add_pca_components!(
 
     @info "Added $(components_retained) PCA components to feature matrix"
 
-    return features
+    # Return pca_result for downstream use (diagnostics, etc.)
+    return pca_result
 end
 
-function create_target_variables!(features::DataFrame)::Vector{Symbol}
-    # Always create all target methods - this is core to the methodology
-    target_methods = ["top25", "top50", "median", "jenks"]
+function create_target_variables!(
+    features::DataFrame;
+    target_methods::Vector{String} = ["top25", "top50", "jenks"]
+)::Vector{Symbol}
     @info "Creating target variables for all threshold methods: $(join(target_methods, ", "))"
 
     target_cols = Symbol[]
 
-    for crime_cat in MODELING_CRIME_CATEGORIES
-        crime_col = Symbol("crime_$(crime_cat)")
+    for crime_cat in CRIME_CATEGORIES
+        crime_col = "crime_$(crime_cat)"
 
         if crime_col in names(features)
             crime_values = features[!, crime_col]
@@ -292,15 +379,31 @@ function create_target_variables!(features::DataFrame)::Vector{Symbol}
 
                 elseif target_method == "jenks"
                     target_col = Symbol("high_$(lowercase(crime_cat))_jenks")
-                    # Use Jenks natural breaks if enough variation exists
-                    unique_vals = sort(unique(crime_values))
-                    if length(unique_vals) >= 5
-                        breaks = calculate_jenks_breaks(unique_vals, 5)
-                        threshold = breaks[end]  # Highest break
+
+                    # Filter to streets with crime to avoid zero-inflation effects
+                    crime_streets = crime_values[crime_values .> 0]
+
+                    if length(crime_streets) >= 3
+                        # Use Jenks with k=3 classes (low, medium, high) on crime-experiencing streets
+                        unique_vals = sort(unique(crime_streets))
+
+                        if length(unique_vals) >= 3
+                            breaks = calculate_jenks_breaks(unique_vals, 3)
+                            threshold = breaks[end-1]  # Second break = medium + high tiers combined
+
+                            # Log the natural groupings
+                            n_elevated = sum(crime_streets .>= threshold)
+                            pct_elevated = round(100 * n_elevated / length(crime_streets); digits=1)
+                            @info "Jenks $(crime_cat): $(n_elevated) elevated crime streets (high + extreme tiers) out of $(length(crime_streets)) crime-experiencing streets ($(pct_elevated)%)"
+                        else
+                            # Fall back to top quartile if insufficient unique values
+                            threshold = quantile(crime_streets, 0.75)
+                            @warn "Insufficient unique values for Jenks in $(crime_cat) (only $(length(unique_vals))), using top 25% of crime streets"
+                        end
                     else
-                        # Fall back to top 25% if insufficient variation
+                        # Fall back to top 25% if very few crime streets
                         threshold = quantile(crime_values, 0.75)
-                        @warn "Insufficient variation for Jenks breaks in $(crime_cat), using top 25%"
+                        @warn "Too few crime-experiencing streets for Jenks in $(crime_cat) (only $(length(crime_streets))), using top 25% of all streets"
                     end
 
                 else
@@ -342,7 +445,7 @@ function create_target_variables!(features::DataFrame)::Vector{Symbol}
     return target_cols
 end
 
-function calculate_jenks_breaks(values::Vector{Float64}, k::Int)::Vector{Float64}
+function calculate_jenks_breaks(values::Vector{Int64}, k::Int)::Vector{Int64}
     n = length(values)
 
     if n < k
@@ -351,7 +454,7 @@ function calculate_jenks_breaks(values::Vector{Float64}, k::Int)::Vector{Float64
     end
 
     if k == 1
-        return Float64[]
+        return Int64[]
     end
 
     # Initialize matrices for dynamic programming
@@ -389,7 +492,7 @@ function calculate_jenks_breaks(values::Vector{Float64}, k::Int)::Vector{Float64
     end
 
     # Backtrack to find the actual break points
-    breaks = Float64[]
+    breaks = Int64[]
 
     # Start from the end and work backwards
     idx = n
@@ -472,7 +575,12 @@ function create_interaction_features!(features, base_cols, max_interactions = 5)
     @info "Created $(interaction_count) interaction features"
 end
 
-function add_place_type_interactions!(features::DataFrame; standardize::Bool = true)
+function add_place_type_interactions!(
+    features::DataFrame;
+    standardize::Bool = true,
+    cooccurrence_pairs::Union{DataFrame,Nothing} = nothing,
+    jaccard_threshold::Float64 = 0.80
+)
     @info "Creating place type interactions ..."
 
     # Identify place type columns (exclude crime, metadata, and derived features)
@@ -545,9 +653,64 @@ function add_place_type_interactions!(features::DataFrame; standardize::Bool = t
         working_cols = place_cols
     end
 
-    # Create pairwise interactions (excluding self-interactions)
+    # Determine which pairs to create based on selection method
+    valid_pairs = Set{Tuple{String,String}}()
+
+    if cooccurrence_pairs !== nothing
+        # Use co-occurrence analysis (RQ2: empirically-grounded pairs)
+        @info "Using co-occurrence analysis to select interaction pairs (Jaccard ≥ $jaccard_threshold)..."
+
+        # Filter to high co-occurrence pairs, excluding non-place columns
+        excluded_cols = [
+            "total_crime",
+            "street_length_meters",
+            "place_density",
+            "total_places",
+            "crime_place_ratio",
+            "commercial_activity"
+        ]
+
+        high_cooc = filter(
+            row -> row.jaccard_similarity >= jaccard_threshold &&
+                   !in(row.place1, excluded_cols) &&
+                   !in(row.place2, excluded_cols),
+            cooccurrence_pairs
+        )
+
+        # Create set of valid pairs (order doesn't matter)
+        for row in eachrow(high_cooc)
+            push!(valid_pairs, (row.place1, row.place2))
+            push!(valid_pairs, (row.place2, row.place1))  # Add reverse for lookup
+        end
+
+        @info "Found $(length(valid_pairs)÷2) high co-occurrence pairs to test"
+    else
+        # Fallback: use prevalence threshold (old behavior)
+        MIN_STREETS_FOR_INTERACTION = 50
+        @info "No co-occurrence data provided, using prevalence threshold (≥$MIN_STREETS_FOR_INTERACTION streets)..."
+
+        # Build valid_pairs set based on prevalence
+        for i = 1:length(place_cols)
+            for j = (i + 1):length(place_cols)
+                col1_name = place_cols[i]
+                col2_name = place_cols[j]
+
+                col1_present = sum(features[!, col1_name] .> 0)
+                col2_present = sum(features[!, col2_name] .> 0)
+
+                if col1_present >= MIN_STREETS_FOR_INTERACTION &&
+                   col2_present >= MIN_STREETS_FOR_INTERACTION
+                    push!(valid_pairs, (col1_name, col2_name))
+                    push!(valid_pairs, (col2_name, col1_name))
+                end
+            end
+        end
+    end
+
+    # Create interactions for valid pairs
     interaction_count = 0
     interactions_created = String[]
+    interactions_skipped = 0
 
     for i = 1:length(place_cols)
         for j = (i + 1):length(place_cols)
@@ -564,16 +727,27 @@ function add_place_type_interactions!(features::DataFrame; standardize::Bool = t
                 eltype(features[!, col1]) <: Number &&
                 eltype(features[!, col2]) <: Number
 
-                # Create interaction name (use original names for clarity)
-                interaction_name = "interact_$(col1_name)_x_$(col2_name)"
+                # FEATURE SELECTION: Check if this pair should be created
+                should_create = (col1_name, col2_name) in valid_pairs
 
-                # Calculate interaction as element-wise product
-                features[!, interaction_name] = features[!, col1] .* features[!, col2]
+                if should_create
+                    # Create interaction name (use original names for clarity)
+                    interaction_name = "interact_$(col1_name)_x_$(col2_name)"
 
-                interaction_count += 1
-                push!(interactions_created, interaction_name)
+                    # Calculate interaction as element-wise product
+                    features[!, interaction_name] = features[!, col1] .* features[!, col2]
+
+                    interaction_count += 1
+                    push!(interactions_created, interaction_name)
+                else
+                    interactions_skipped += 1
+                end
             end
         end
+    end
+
+    if interactions_skipped > 0
+        @info "Skipped $interactions_skipped low co-occurrence or sparse interactions"
     end
 
     # Clean up temporary standardized columns if created
