@@ -10,7 +10,7 @@ Our focus is not on crime hot spots themselves, but on how the makeup of the pla
 ## Research Questions
 
 1. **RQ1**: Does the number of different place types on a street segment affect the risk of that street segment being a crime hotspot?
-2. **RQ2**: Does the composition of place types on a street segment affect the risk of that street segment being a crime hotspot?
+2. **RQ2**: Does the combination of some place types on a street segment affect the risk of that street segment being a crime hotspot?
 3. **RQ3**: Do any latent groups of place types on a street segment affect the risk of that street segment being a crime hotspot?
 
 ## Data Sources
@@ -33,7 +33,7 @@ Our focus is not on crime hot spots themselves, but on how the makeup of the pla
 ### Place Data
 - **Source**: Google Places API
 - **Types**: Points of interest (businesses, facilities, institutions)
-- **Mapped Categories**: 12 standardized place types (see https://developers.google.com/maps/documentation/places/web-service/place-types)
+- **Mapped Categories**: 17 standardized place types (see https://developers.google.com/maps/documentation/places/web-service/place-types)
   - AUTOMOTIVE
   - BUSINESS
   - CULTURE
@@ -45,8 +45,11 @@ Our focus is not on crime hot spots themselves, but on how the makeup of the pla
   - GOVERNMENT
   - HEALTH_WELLNESS
   - LODGING
+  - OTHER
+  - PLACE_OF_WORSHIP
   - SERVICES
   - SHOPPING
+  - SPORTS
   - TRANSPORTATION
 - I create a "primary_type" for each place that is the listed 'primaryType' from the Google Places API.
 - I create a "raw_type" for each place that is all of the types in a list from the Google Places API, with the 'Table B' generic categoris in the link above removed.
@@ -78,8 +81,7 @@ This produces 12 binary outcome variables per dataset:
 **Crime-to-Street Matching:**
 - Nearest neighbor algorithm (Manhattan distance metric)
 - NYPD crime data is pre-geocded to the street segment centroid using NAD83.
-- Distance filtering: Crimes >10m from nearest street are excluded as they are assumed to be crimes at intersections.
-- Rationale: Geocoding accuracy concerns
+- Distance filtering: Crimes >10m from nearest street are excluded as they are assumed to be crimes at intersections. Given that the incidents and arrests are pregeocded to the center of the street segmenet this is a safe assumption for a cut off. 
 
 **Place-to-Street Matching:**
 - Nearest neighbor algorithm (Manhattan distance metric)
@@ -101,7 +103,7 @@ Conducted **before** feature engineering to inform interaction term selection:
 
 ## Feature Engineering
 
-All features are computed at the street segment level. The feature matrix contains three distinct predictor types corresponding to the three research questions.
+All features are computed at the street segment level. The feature matrix contains a row for each street segment with counts of place types, interaction effects of the place types, and the principal component values of the raw place types. In addition each row has the 12 target variables.  
 
 ### Base Features (RQ1)
 
@@ -114,7 +116,7 @@ All features are computed at the street segment level. The feature matrix contai
 - `total_places`: Sum of all place counts
 - `total_crime`: Sum of all crime counts
 - `crime_place_ratio`: Total crime / (total places + 1)
-- `place_density`: Places per 100 meters of street length
+- `place_density`: Places per 100 meters of street length (this is used as a control variable in the models for streets that just simply have more places and less area.)
 
 ### Interaction Features (RQ2)
 
@@ -158,19 +160,20 @@ Each research question is tested using **logistic regression** with a binomial f
 
 ### RQ1: Counts-Only Models
 
-**Predictors:** Raw place type counts (12 categories)
+**Predictors:** Raw place type counts (12 categories) plus the place density control variable.
 
 **Formula Example:**
 ```
 high_larceny_top25 ~ AUTOMOTIVE + BUSINESS + CULTURE + EDUCATION +
                       ENTERTAINMENT_RECREATION + FACILITIES + FINANCE +
                       FOOD_DRINK + GOVERNMENT + HEALTH_WELLNESS +
-                      LODGING + SERVICES + SHOPPING + TRANSPORTATION
+                      LODGING + SERVICES + SHOPPING + TRANSPORTATION +
+                      place_density
 ```
 
 **Predictor Filtering:**
 - Excludes: crime variables, target variables, interaction terms, PCA components, metadata
-- Includes: Only mapped place type counts
+- Includes: Only mapped place type counts and the place density control variable.
 
 **Theoretical Test:** Do raw facility counts (quantity) predict crime hot spots?
 
@@ -180,13 +183,13 @@ high_larceny_top25 ~ AUTOMOTIVE + BUSINESS + CULTURE + EDUCATION +
 
 **Formula Example:**
 ```
-high_larceny_top25 ~ interact_FOOD_DRINK_x_ENTERTAINMENT_RECREATION +
+high_larceny_top25 ~ place_density + interact_FOOD_DRINK_x_ENTERTAINMENT_RECREATION +
                       interact_SHOPPING_x_FINANCE +
                       interact_BUSINESS_x_TRANSPORTATION + ...
 ```
 
 **Predictor Filtering:**
-- Pattern match: Columns starting with `interact_`
+- Pattern match: Columns starting with `interact_` + `place_density`
 - Excludes: Base counts, PCA components
 
 **Theoretical Test:** Do facility combinations (composition) predict crime hot spots beyond simple counts?
@@ -197,11 +200,11 @@ high_larceny_top25 ~ interact_FOOD_DRINK_x_ENTERTAINMENT_RECREATION +
 
 **Formula Example:**
 ```
-high_larceny_top25 ~ PC_1 + PC_2 + PC_3 + PC_4 + PC_5 + ...
+high_larceny_top25 ~ place_density + PC_1 + PC_2 + PC_3 + PC_4 + PC_5 + ...
 ```
 
 **Predictor Filtering:**
-- Pattern match: Columns starting with `PC_`
+- Pattern match: Columns starting with `PC_` + `place_density`
 - Excludes: Base counts, interaction terms
 
 **Theoretical Test:** Do latent patterns in facility composition predict crime hot spots?
@@ -288,8 +291,8 @@ output/
 │   ├── incidents_spatial_stats.csv
 │   └── arrests_spatial_stats.csv
 └── cooccurrence/
-    ├── place_cooccurrence_matrix.csv
-    └── place_pairs_analysis.csv
+    ├── cooccurrence_matrix.csv
+    └── cooccurrence_pairs.csv
 ```
 
 ## Research Design Rationale
