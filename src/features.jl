@@ -141,13 +141,8 @@ function create_street_features(
     @info "Adding PCA components from raw place types..."
     pca_result = add_pca_components!(features, place_matched)
 
-    # Save feature engineering report (now includes PC columns!)
-    features_dir = joinpath(OUTPUT_DIR, "features")
-    mkpath(features_dir)
-
-    # Save feature matrix - now has complete features with PC components
-    CSV.write(joinpath(features_dir, "$(dataset_name)_features.csv"), features)
-    @info "Saved feature matrix to: $(features_dir)/$(dataset_name)_features.csv"
+    # Note: Feature matrix will be saved AFTER target variables are created in pipeline
+    # This ensures the saved CSV includes both features AND targets for reproducibility
 
     # Return both features and PCA result for downstream use
     return (features = features, pca_result = pca_result)

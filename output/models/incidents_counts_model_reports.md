@@ -1,6 +1,6 @@
 # Model Results for INCIDENTS_COUNTS
 
-Generated: 2025-12-09 15:40:32
+Generated: 2025-12-16 20:24:03
 
 ---
 
@@ -8,46 +8,43 @@ Generated: 2025-12-09 15:40:32
 
 ### Formula
 ```
-high_burglary_jenks ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + total_crime + total_places + street_length_meters + place_density
+high_burglary_jenks ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + place_density
 ```
 
 ### Coefficients
 ```
 Term                               Estimate    Std.Error    z value     Pr(>|z|)
 ────────────────────────────────────────────────────────────────────────────────
-(Intercept)                       -8.792523     0.987505    -8.9038          0.0 ***
-SPORTS                            -2.693979  1139.422026    -0.0024     0.998114 
-SHOPPING                           3.882026  1153.215022     0.0034     0.997314 
-OTHER                              1.779156  1138.095666     0.0016     0.998753 
-TRANSPORTATION                     -1.11362  1135.664846     -0.001     0.999218 
-AUTOMOTIVE                        -0.868576  1138.242166    -0.0008     0.999391 
-SERVICES                          -1.110705  1108.711508     -0.001     0.999201 
-FOOD_DRINK                         0.707669  1092.112316     0.0006     0.999483 
-ENTERTAINMENT_RECREATION          -0.764907  1135.046402    -0.0007     0.999462 
-HEALTH_WELLNESS                    1.835212  1090.851948     0.0017     0.998658 
-LODGING                          -10.922662  1714.483195    -0.0064     0.994917 
-PLACE_OF_WORSHIP                   3.287979  1205.117307     0.0027     0.997823 
-EDUCATION                          4.839134  1005.940058     0.0048     0.996162 
-GOVERNMENT                        -3.074865  1056.365869    -0.0029     0.997678 
-BUSINESS                                0.0          NaN        NaN          NaN 
-FINANCE                            5.489799  1210.397713     0.0045     0.996381 
-FACILITIES                         36.97061  2289.266135     0.0161     0.987115 
-CULTURE                            8.717873  1294.976407     0.0067     0.994629 
-total_crime                        0.027411     0.004423     6.1972          0.0 ***
-total_places                      -1.543091  1109.319421    -0.0014      0.99889 
-street_length_meters              -0.007665     0.009392    -0.8161     0.414437 
-place_density                      0.019012     2.519557     0.0075     0.993979 
+(Intercept)                        -7.73994     0.408337   -18.9548          0.0 ***
+SPORTS                            -6.056766   547.112234    -0.0111     0.991167 
+SHOPPING                           6.185642   626.573611     0.0099     0.992123 
+OTHER                             -0.181132   452.600827    -0.0004     0.999681 
+TRANSPORTATION                    -4.024013   255.521625    -0.0157     0.987435 
+AUTOMOTIVE                        -6.810991   516.688633    -0.0132     0.989483 
+SERVICES                          -4.271662   400.117488    -0.0107     0.991482 
+FOOD_DRINK                        -2.333845   427.022112    -0.0055     0.995639 
+ENTERTAINMENT_RECREATION          -5.720545   451.501694    -0.0127     0.989891 
+HEALTH_WELLNESS                   -4.213877   241.522956    -0.0174      0.98608 
+LODGING                           -5.066252  4006.501428    -0.0013     0.998991 
+PLACE_OF_WORSHIP                   1.235014   813.673985     0.0015     0.998789 
+EDUCATION                          8.459946   1366.87711     0.0062     0.995062 
+GOVERNMENT                        -6.090852  1132.175208    -0.0054     0.995708 
+BUSINESS                          -4.516185 14422.327719    -0.0003      0.99975 
+FINANCE                           28.425756  1506.568954     0.0189     0.984947 
+FACILITIES                        40.824301   5983.25352     0.0068     0.994556 
+CULTURE                            0.708149   2722.44488     0.0003     0.999792 
+place_density                     -0.075785    15.795768    -0.0048     0.996172 
 ```
 
 Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ### Model Statistics
 ```
-Deviance: Inf
+Deviance: 104.8819
 Null Deviance: 104.9867
-AIC: Inf
-BIC: Inf
-McFadden R²: -Inf
+AIC: 142.8819
+BIC: 286.1584
+McFadden R²: 0.001
 Number of observations: 13917.0
 ```
 
@@ -57,46 +54,43 @@ Number of observations: 13917.0
 
 ### Formula
 ```
-high_burglary_top25 ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + total_crime + total_places + street_length_meters + place_density
+high_burglary_top25 ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + place_density
 ```
 
 ### Coefficients
 ```
 Term                               Estimate    Std.Error    z value     Pr(>|z|)
 ────────────────────────────────────────────────────────────────────────────────
-(Intercept)                       -6.057572     0.170911   -35.4429          0.0 ***
-SPORTS                             1.876799  4676.980623     0.0004      0.99968 
-SHOPPING                          15.423535  4782.447479     0.0032     0.997427 
-OTHER                              8.522753  4637.168145     0.0018     0.998534 
-TRANSPORTATION                     4.233614  4640.743822     0.0009     0.999272 
-AUTOMOTIVE                         1.313682  4762.432305     0.0003      0.99978 
-SERVICES                           3.815334   4549.28634     0.0008     0.999331 
-FOOD_DRINK                         5.933256  4507.960596     0.0013      0.99895 
-ENTERTAINMENT_RECREATION           2.463646  4539.977357     0.0005     0.999567 
-HEALTH_WELLNESS                    3.889902  4621.446958     0.0008     0.999328 
-LODGING                            1.773901  6068.261417     0.0003     0.999767 
-PLACE_OF_WORSHIP                  10.311546  4797.914124     0.0021     0.998285 
-EDUCATION                          17.44356  4267.041095     0.0041     0.996738 
-GOVERNMENT                         1.585328  4304.286222     0.0004     0.999706 
-BUSINESS                                0.0          NaN        NaN          NaN 
-FINANCE                           39.674307  4405.564955      0.009     0.992815 
-FACILITIES                        56.088135  6292.662678     0.0089     0.992888 
-CULTURE                           10.355714  3744.069631     0.0028     0.997793 
-total_crime                        0.029503     0.002344    12.5886          0.0 ***
-total_places                       -8.58312  4620.329945    -0.0019     0.998518 
-street_length_meters               0.000597     0.000248     2.4085      0.01602 *
-place_density                     -0.082848     5.953283    -0.0139     0.988897 
+(Intercept)                       -5.450311     0.130468    -41.775          0.0 ***
+SPORTS                            -6.200053   175.206937    -0.0354     0.971771 
+SHOPPING                           5.984139    82.449389     0.0726     0.942141 
+OTHER                              0.018863    129.64355     0.0001     0.999884 
+TRANSPORTATION                    -4.107431    76.199547    -0.0539     0.957012 
+AUTOMOTIVE                        -6.837658    130.25048    -0.0525     0.958133 
+SERVICES                          -4.609124   113.582788    -0.0406     0.967631 
+FOOD_DRINK                        -2.233968    49.510731    -0.0451     0.964011 
+ENTERTAINMENT_RECREATION          -5.762104   139.396848    -0.0413     0.967028 
+HEALTH_WELLNESS                   -4.228137    77.175839    -0.0548     0.956309 
+LODGING                           -4.078172   995.547747    -0.0041     0.996732 
+PLACE_OF_WORSHIP                   1.151762   114.067845     0.0101     0.991944 
+EDUCATION                          8.878422   192.577196     0.0461     0.963228 
+GOVERNMENT                        -6.030789   161.834732    -0.0373     0.970274 
+BUSINESS                          -1.441645  1321.679844    -0.0011      0.99913 
+FINANCE                            27.49206   398.232009      0.069     0.944962 
+FACILITIES                        41.924096  1224.092262     0.0342     0.972678 
+CULTURE                            0.320165   740.765433     0.0004     0.999655 
+place_density                     -0.061891     4.289304    -0.0144     0.988488 
 ```
 
 Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ### Model Statistics
 ```
-Deviance: 560.6525
+Deviance: 761.3901
 Null Deviance: 762.4223
-AIC: 602.6525
-BIC: 761.0107
-McFadden R²: 0.2646
+AIC: 799.3901
+BIC: 942.6665
+McFadden R²: 0.0014
 Number of observations: 13917.0
 ```
 
@@ -106,46 +100,43 @@ Number of observations: 13917.0
 
 ### Formula
 ```
-high_burglary_top50 ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + total_crime + total_places + street_length_meters + place_density
+high_burglary_top50 ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + place_density
 ```
 
 ### Coefficients
 ```
 Term                               Estimate    Std.Error    z value     Pr(>|z|)
 ────────────────────────────────────────────────────────────────────────────────
-(Intercept)                       -3.982473     0.064659   -61.5919          0.0 ***
-SPORTS                             1.819169  1617.642735     0.0011     0.999103 
-SHOPPING                          15.457026  1658.698432     0.0093     0.992565 
-OTHER                                8.4942  1607.424254     0.0053     0.995784 
-TRANSPORTATION                     4.156435  1611.256664     0.0026     0.997942 
-AUTOMOTIVE                         1.209269  1650.859636     0.0007     0.999416 
-SERVICES                           3.741743   1578.12058     0.0024     0.998108 
-FOOD_DRINK                         5.886781  1563.669689     0.0038     0.996996 
-ENTERTAINMENT_RECREATION           2.372608  1575.897883     0.0015     0.998799 
-HEALTH_WELLNESS                    3.784573  1602.688836     0.0024     0.998116 
-LODGING                            1.743202  2100.545957     0.0008     0.999338 
-PLACE_OF_WORSHIP                  10.306152  1663.081844     0.0062     0.995056 
-EDUCATION                         17.501819  1481.739706     0.0118     0.990576 
-GOVERNMENT                         1.520397  1491.323705      0.001     0.999187 
-BUSINESS                                0.0          NaN        NaN          NaN 
-FINANCE                           39.998872  1533.737924     0.0261     0.979194 
-FACILITIES                        56.267819  2204.106981     0.0255     0.979633 
-CULTURE                           10.308089  1305.172596     0.0079     0.993698 
-total_crime                        0.034034     0.002292    14.8474          0.0 ***
-total_places                      -8.556267   1602.25803    -0.0053     0.995739 
-street_length_meters               0.000644     0.000159     4.0552       5.0e-5 ***
-place_density                     -0.083733     2.080322    -0.0403     0.967894 
+(Intercept)                       -3.654383     0.054295   -67.3063          0.0 ***
+SPORTS                            -6.842984   104.703164    -0.0654     0.947891 
+SHOPPING                           6.953336    97.661167     0.0712      0.94324 
+OTHER                              -0.13375    81.768993    -0.0016     0.998695 
+TRANSPORTATION                    -4.657009    47.482136    -0.0981     0.921869 
+AUTOMOTIVE                        -7.815612    90.624358    -0.0862     0.931274 
+SERVICES                          -5.071209    73.150399    -0.0693      0.94473 
+FOOD_DRINK                        -2.597717     66.31201    -0.0392     0.968752 
+ENTERTAINMENT_RECREATION          -6.493221    84.498241    -0.0768     0.938747 
+HEALTH_WELLNESS                   -4.958401    45.537718    -0.1089     0.913293 
+LODGING                            -6.15192   716.018565    -0.0086     0.993145 
+PLACE_OF_WORSHIP                   1.462606   129.816382     0.0113     0.991011 
+EDUCATION                          9.932554   215.263414     0.0461     0.963198 
+GOVERNMENT                        -6.813561   174.965545    -0.0389     0.968936 
+BUSINESS                           -2.88706  2182.940108    -0.0013     0.998945 
+FINANCE                           32.531878   270.061523     0.1205     0.904118 
+FACILITIES                        46.464218   983.640351     0.0472     0.962324 
+CULTURE                             1.35821    499.97955     0.0027     0.997833 
+place_density                     -0.082725     2.884165    -0.0287     0.977118 
 ```
 
 Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ### Model Statistics
 ```
-Deviance: 2919.6344
+Deviance: 3248.3804
 Null Deviance: 3254.5348
-AIC: 2961.6344
-BIC: 3119.9926
-McFadden R²: 0.1029
+AIC: 3286.3804
+BIC: 3429.6569
+McFadden R²: 0.0019
 Number of observations: 13917.0
 ```
 
@@ -155,46 +146,43 @@ Number of observations: 13917.0
 
 ### Formula
 ```
-high_drugs_jenks ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + total_crime + total_places + street_length_meters + place_density
+high_drugs_jenks ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + place_density
 ```
 
 ### Coefficients
 ```
 Term                               Estimate    Std.Error    z value     Pr(>|z|)
 ────────────────────────────────────────────────────────────────────────────────
-(Intercept)                       -7.280199     0.337101   -21.5965          0.0 ***
-SPORTS                             1.077944  9362.613708     0.0001     0.999908 
-SHOPPING                           14.14096  9524.786493     0.0015     0.998815 
-OTHER                              7.576925  9234.927236     0.0008     0.999345 
-TRANSPORTATION                     3.438968  9208.733506     0.0004     0.999702 
-AUTOMOTIVE                         0.599889  9486.667862     0.0001      0.99995 
-SERVICES                           2.987198  9063.105467     0.0003     0.999737 
-FOOD_DRINK                         5.085944  8971.350905     0.0006     0.999548 
-ENTERTAINMENT_RECREATION           1.734307  9024.849651     0.0002     0.999847 
-HEALTH_WELLNESS                    3.218818  9201.838998     0.0003     0.999721 
-LODGING                            0.467173 12060.930178        0.0     0.999969 
-PLACE_OF_WORSHIP                   9.255419  9567.065662      0.001     0.999228 
-EDUCATION                         16.242249   8456.59661     0.0019     0.998468 
-GOVERNMENT                         0.887053  8571.263375     0.0001     0.999917 
-BUSINESS                                0.0          NaN        NaN          NaN 
-FINANCE                           37.241567  8723.651286     0.0043     0.996594 
-FACILITIES                          53.6772 12281.497554     0.0044     0.996513 
-CULTURE                             9.90414  7375.337598     0.0013     0.998929 
-total_crime                        0.015802     0.002488     6.3509          0.0 ***
-total_places                      -7.609932  9200.783131    -0.0008      0.99934 
-street_length_meters               0.000263     0.001085     0.2425     0.808408 
-place_density                     -0.078793    11.551347    -0.0068     0.994558 
+(Intercept)                       -6.966242     0.277481   -25.1053          0.0 ***
+SPORTS                            -6.708786   504.328973    -0.0133     0.989387 
+SHOPPING                           6.905365   329.726455     0.0209     0.983291 
+OTHER                             -0.087357    380.95364    -0.0002     0.999817 
+TRANSPORTATION                    -4.369079   208.338117     -0.021     0.983269 
+AUTOMOTIVE                        -7.361007   407.954168     -0.018     0.985604 
+SERVICES                          -4.818435   332.765999    -0.0145     0.988447 
+FOOD_DRINK                        -2.674403   210.798224    -0.0127     0.989877 
+ENTERTAINMENT_RECREATION          -6.171661   395.167567    -0.0156     0.987539 
+HEALTH_WELLNESS                    -4.61581   200.935348     -0.023     0.981673 
+LODGING                           -6.997439  2861.341115    -0.0024     0.998049 
+PLACE_OF_WORSHIP                   1.701915   348.100284     0.0049     0.996099 
+EDUCATION                          9.045251   755.700945      0.012      0.99045 
+GOVERNMENT                        -6.995985    669.99296    -0.0104     0.991669 
+BUSINESS                          -8.837609  7976.770331    -0.0011     0.999116 
+FINANCE                           31.473444   989.843333     0.0318     0.974634 
+FACILITIES                        47.424119  3995.073333     0.0119     0.990529 
+CULTURE                            1.954828  2219.579199     0.0009     0.999297 
+place_density                     -0.084935    10.258312    -0.0083     0.993394 
 ```
 
 Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ### Model Statistics
 ```
-Deviance: 179.3346
+Deviance: 207.1346
 Null Deviance: 207.3617
-AIC: 221.3346
-BIC: 379.6928
-McFadden R²: 0.1352
+AIC: 245.1346
+BIC: 388.4111
+McFadden R²: 0.0011
 Number of observations: 13917.0
 ```
 
@@ -204,46 +192,43 @@ Number of observations: 13917.0
 
 ### Formula
 ```
-high_drugs_top25 ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + total_crime + total_places + street_length_meters + place_density
+high_drugs_top25 ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + place_density
 ```
 
 ### Coefficients
 ```
 Term                               Estimate    Std.Error    z value     Pr(>|z|)
 ────────────────────────────────────────────────────────────────────────────────
-(Intercept)                       -7.467522     0.361002   -20.6855          0.0 ***
-SPORTS                            -3.722005  6076.818001    -0.0006     0.999511 
-SHOPPING                           8.598126  6274.944545     0.0014     0.998907 
-OTHER                              2.532333  6032.218334     0.0004     0.999665 
-TRANSPORTATION                    -1.545229  6076.498055    -0.0003     0.999797 
-AUTOMOTIVE                        -4.321995  6192.518768    -0.0007     0.999443 
-SERVICES                           -2.00425    6062.0519    -0.0003     0.999736 
-FOOD_DRINK                         0.241777  5856.507849        0.0     0.999967 
-ENTERTAINMENT_RECREATION            -3.2328  6046.720488    -0.0005     0.999573 
-HEALTH_WELLNESS                   -1.748135  6035.132149    -0.0003     0.999769 
-LODGING                           -2.503361  6254.214892    -0.0004     0.999681 
-PLACE_OF_WORSHIP                   3.766791  6365.040147     0.0006     0.999528 
-EDUCATION                         11.286456  5508.788754      0.002     0.998365 
-GOVERNMENT                        -3.562894  5620.160938    -0.0006     0.999494 
-BUSINESS                                0.0          NaN        NaN          NaN 
-FINANCE                           30.497868  6429.145795     0.0047     0.996215 
-FACILITIES                        44.708751  8551.110331     0.0052     0.995828 
-CULTURE                            3.558257  6640.144309     0.0005     0.999572 
-total_crime                        0.015618     0.002587     6.0383          0.0 ***
-total_places                      -2.527792  6029.820521    -0.0004     0.999666 
-street_length_meters               0.000353     0.000928     0.3803     0.703711 
-place_density                     -0.067923    12.860088    -0.0053     0.995786 
+(Intercept)                       -7.133441     0.301632   -23.6495          0.0 ***
+SPORTS                             -6.63888   526.578487    -0.0126     0.989941 
+SHOPPING                           6.704475    348.98937     0.0192     0.984673 
+OTHER                             -0.045433    377.23296    -0.0001     0.999904 
+TRANSPORTATION                    -4.273392   210.886062    -0.0203     0.983833 
+AUTOMOTIVE                        -7.161499   427.741874    -0.0167     0.986642 
+SERVICES                          -4.741972   331.377065    -0.0143     0.988583 
+FOOD_DRINK                        -2.594468    227.15931    -0.0114     0.990887 
+ENTERTAINMENT_RECREATION          -5.997279   402.213418    -0.0149     0.988103 
+HEALTH_WELLNESS                   -4.461244    202.03384    -0.0221     0.982383 
+LODGING                           -7.304553  3030.076191    -0.0024     0.998077 
+PLACE_OF_WORSHIP                   1.721261   375.299566     0.0046     0.996341 
+EDUCATION                          8.811737   814.973746     0.0108     0.991373 
+GOVERNMENT                        -6.905623   687.843029      -0.01      0.99199 
+BUSINESS                          -8.331951  8597.672539     -0.001     0.999227 
+FINANCE                           30.353471   1026.81777     0.0296     0.976417 
+FACILITIES                         47.29704  4016.439614     0.0118     0.990604 
+CULTURE                            2.320289  2309.322152      0.001     0.999198 
+place_density                     -0.080909     10.89628    -0.0074     0.994075 
 ```
 
 Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ### Model Statistics
 ```
-Deviance: 153.8147
+Deviance: 178.9445
 Null Deviance: 179.1367
-AIC: 195.8147
-BIC: 354.1729
-McFadden R²: 0.1414
+AIC: 216.9445
+BIC: 360.221
+McFadden R²: 0.0011
 Number of observations: 13917.0
 ```
 
@@ -253,46 +238,43 @@ Number of observations: 13917.0
 
 ### Formula
 ```
-high_drugs_top50 ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + total_crime + total_places + street_length_meters + place_density
+high_drugs_top50 ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + place_density
 ```
 
 ### Coefficients
 ```
 Term                               Estimate    Std.Error    z value     Pr(>|z|)
 ────────────────────────────────────────────────────────────────────────────────
-(Intercept)                       -5.616177     0.169104   -33.2113          0.0 ***
-SPORTS                            -4.956269  3578.975951    -0.0014     0.998895 
-SHOPPING                           8.872004  3697.299354     0.0024     0.998085 
-OTHER                              1.777128  3554.297878     0.0005     0.999601 
-TRANSPORTATION                    -2.804115   3581.04972    -0.0008     0.999375 
-AUTOMOTIVE                         -5.92744  3648.742624    -0.0016     0.998704 
-SERVICES                          -3.232454   3572.27985    -0.0009     0.999278 
-FOOD_DRINK                        -0.684921  3450.777441    -0.0002     0.999842 
-ENTERTAINMENT_RECREATION          -4.637965  3562.886787    -0.0013     0.998961 
-HEALTH_WELLNESS                   -3.074327  3555.961705    -0.0009      0.99931 
-LODGING                           -3.990253  3660.799254    -0.0011      0.99913 
-PLACE_OF_WORSHIP                   3.319426  3750.590992     0.0009     0.999294 
-EDUCATION                         11.995804  3245.919484     0.0037     0.997051 
-GOVERNMENT                        -4.922455  3312.051012    -0.0015     0.998814 
-BUSINESS                                0.0          NaN        NaN          NaN 
-FINANCE                           34.388314  3786.587768     0.0091     0.992754 
-FACILITIES                        48.476929  5043.468061     0.0096     0.992331 
-CULTURE                            3.131714   3920.13738     0.0008     0.999363 
-total_crime                         0.01919     0.001892    10.1452          0.0 ***
-total_places                       -1.91095  3552.811381    -0.0005     0.999571 
-street_length_meters              -0.000121     0.000957    -0.1266     0.899276 
-place_density                     -0.079999     7.472017    -0.0107     0.991458 
+(Intercept)                       -5.384422     0.126277   -42.6398          0.0 ***
+SPORTS                            -6.331318   182.210588    -0.0347     0.972281 
+SHOPPING                           6.164457   141.222725     0.0437     0.965183 
+OTHER                             -0.016623   133.208384    -0.0001       0.9999 
+TRANSPORTATION                    -4.123869    79.013952    -0.0522     0.958376 
+AUTOMOTIVE                        -6.938194   146.574774    -0.0473     0.962246 
+SERVICES                          -4.586557   120.067104    -0.0382     0.969528 
+FOOD_DRINK                        -2.317079    94.790769    -0.0244     0.980498 
+ENTERTAINMENT_RECREATION          -5.785662    143.40544    -0.0403     0.967818 
+HEALTH_WELLNESS                    -4.25497    75.844987    -0.0561     0.955261 
+LODGING                           -5.763351  1276.073784    -0.0045     0.996396 
+PLACE_OF_WORSHIP                   1.343487   188.472183     0.0071     0.994312 
+EDUCATION                          8.828273   313.829243     0.0281     0.977558 
+GOVERNMENT                        -6.230152   252.068389    -0.0247     0.980281 
+BUSINESS                          -3.076773  3072.390511     -0.001     0.999201 
+FINANCE                           28.318271   464.930083     0.0609     0.951432 
+FACILITIES                        43.302954  1505.911756     0.0288      0.97706 
+CULTURE                            1.504167   857.719693     0.0018     0.998601 
+place_density                     -0.070267     5.076465    -0.0138     0.988956 
 ```
 
 Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ### Model Statistics
 ```
-Deviance: 716.9702
+Deviance: 804.7261
 Null Deviance: 805.8286
-AIC: 758.9702
-BIC: 917.3284
-McFadden R²: 0.1103
+AIC: 842.7261
+BIC: 986.0026
+McFadden R²: 0.0014
 Number of observations: 13917.0
 ```
 
@@ -302,46 +284,43 @@ Number of observations: 13917.0
 
 ### Formula
 ```
-high_larceny_jenks ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + total_crime + total_places + street_length_meters + place_density
+high_larceny_jenks ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + place_density
 ```
 
 ### Coefficients
 ```
 Term                               Estimate    Std.Error    z value     Pr(>|z|)
 ────────────────────────────────────────────────────────────────────────────────
-(Intercept)                      -10.065907     1.307845    -7.6966          0.0 ***
-SPORTS                            -1.339053   521.725345    -0.0026     0.997952 
-SHOPPING                           0.841038   485.781887     0.0017     0.998619 
-OTHER                              0.685097   519.672155     0.0013     0.998948 
-TRANSPORTATION                    -0.326404   505.628823    -0.0006     0.999485 
-AUTOMOTIVE                         0.068862   519.193356     0.0001     0.999894 
-SERVICES                          -0.039561    492.62398    -0.0001     0.999936 
-FOOD_DRINK                         0.127662   487.938544     0.0003     0.999791 
-ENTERTAINMENT_RECREATION            -0.2879   501.831981    -0.0006     0.999542 
-HEALTH_WELLNESS                    0.685716    475.48605     0.0014     0.998849 
-LODGING                           -3.347951  1037.805226    -0.0032     0.997426 
-PLACE_OF_WORSHIP                   0.396115    528.97911     0.0007     0.999403 
-EDUCATION                           0.98024   470.917839     0.0021     0.998339 
-GOVERNMENT                        -1.034539   545.432234    -0.0019     0.998487 
-BUSINESS                                0.0          NaN        NaN          NaN 
-FINANCE                           -0.301694   643.904588    -0.0005     0.999626 
-FACILITIES                        10.822346  1433.621351     0.0075     0.993977 
-CULTURE                            2.059983   672.359952     0.0031     0.997555 
-total_crime                        0.131719     0.016505     7.9808          0.0 ***
-total_places                      -0.362224   487.269284    -0.0007     0.999407 
-street_length_meters              -0.011273     0.005675    -1.9864     0.046993 *
-place_density                      0.004002     0.656485     0.0061     0.995136 
+(Intercept)                       -5.209195     0.115785   -44.9902          0.0 ***
+SPORTS                            -6.575613    196.05602    -0.0335     0.973244 
+SHOPPING                           6.595203   132.424293     0.0498     0.960279 
+OTHER                             -0.042043   138.441179    -0.0003     0.999758 
+TRANSPORTATION                     -4.22074    77.960431    -0.0541     0.956824 
+AUTOMOTIVE                        -7.076357   159.798081    -0.0443     0.964679 
+SERVICES                          -4.683076   121.973845    -0.0384     0.969373 
+FOOD_DRINK                          -2.5457    86.786579    -0.0293     0.976599 
+ENTERTAINMENT_RECREATION          -5.917729   149.253805    -0.0396     0.968373 
+HEALTH_WELLNESS                   -4.391506    74.527335    -0.0589     0.953012 
+LODGING                           -7.336233  1148.901784    -0.0064     0.994905 
+PLACE_OF_WORSHIP                   1.695331   144.080944     0.0118     0.990612 
+EDUCATION                          8.717289   311.259911      0.028     0.977657 
+GOVERNMENT                        -6.806287    260.81109    -0.0261      0.97918 
+BUSINESS                          -7.848237  3292.832413    -0.0024     0.998098 
+FINANCE                           29.867462   384.737849     0.0776     0.938122 
+FACILITIES                        46.732824  1499.769863     0.0312     0.975142 
+CULTURE                            2.415389   868.096759     0.0028      0.99778 
+place_density                     -0.079386     4.152574    -0.0191     0.984747 
 ```
 
 Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ### Model Statistics
 ```
-Deviance: 67.6766
+Deviance: 931.7888
 Null Deviance: 933.1018
-AIC: 109.6766
-BIC: 268.0348
-McFadden R²: 0.9275
+AIC: 969.7888
+BIC: 1113.0653
+McFadden R²: 0.0014
 Number of observations: 13917.0
 ```
 
@@ -351,46 +330,43 @@ Number of observations: 13917.0
 
 ### Formula
 ```
-high_larceny_top25 ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + total_crime + total_places + street_length_meters + place_density
+high_larceny_top25 ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + place_density
 ```
 
 ### Coefficients
 ```
 Term                               Estimate    Std.Error    z value     Pr(>|z|)
 ────────────────────────────────────────────────────────────────────────────────
-(Intercept)                         -9.3517     1.059744    -8.8245          0.0 ***
-SPORTS                             -4.41715  8327.817744    -0.0005     0.999577 
-SHOPPING                            5.37787  8528.008453     0.0006     0.999497 
-OTHER                              1.629672  8328.722935     0.0002     0.999844 
-TRANSPORTATION                    -2.901201   8260.13945    -0.0004      0.99972 
-AUTOMOTIVE                        -3.417279  8274.295611    -0.0004      0.99967 
-SERVICES                          -3.297485  8126.811602    -0.0004     0.999676 
-FOOD_DRINK                        -0.161774  8020.217582       -0.0     0.999984 
-ENTERTAINMENT_RECREATION          -2.977013  8231.392422    -0.0004     0.999711 
-HEALTH_WELLNESS                   -0.764704  8219.456888    -0.0001     0.999926 
-LODGING                           -4.536742  9975.202975    -0.0005     0.999637 
-PLACE_OF_WORSHIP                   3.117862  8588.367466     0.0004      0.99971 
-EDUCATION                          7.411041   7943.03241     0.0009     0.999256 
-GOVERNMENT                        -5.467904    7565.4114    -0.0007     0.999423 
-BUSINESS                                0.0          NaN        NaN          NaN 
-FINANCE                           14.053677  9822.949251     0.0014     0.998858 
-FACILITIES                        47.802588 12152.156069     0.0039     0.996861 
-CULTURE                            3.941761  8196.408838     0.0005     0.999616 
-total_crime                        0.071327     0.008222     8.6756          0.0 ***
-total_places                       -1.27859  8206.042231    -0.0002     0.999876 
-street_length_meters              -0.005225     0.006349     -0.823     0.410516 
-place_density                      0.034739     7.309947     0.0048     0.996208 
+(Intercept)                       -5.974246     0.169246   -35.2992          0.0 ***
+SPORTS                            -6.707707   306.576061    -0.0219     0.982544 
+SHOPPING                           6.895109   200.301348     0.0344     0.972539 
+OTHER                             -0.082037   230.424113    -0.0004     0.999716 
+TRANSPORTATION                    -4.363858   126.316823    -0.0345     0.972441 
+AUTOMOTIVE                        -7.349598    248.05834    -0.0296     0.976363 
+SERVICES                          -4.817416   201.356776    -0.0239     0.980913 
+FOOD_DRINK                        -2.670938   128.202611    -0.0208     0.983378 
+ENTERTAINMENT_RECREATION          -6.161258   239.651913    -0.0257     0.979489 
+HEALTH_WELLNESS                   -4.606822   121.809866    -0.0378     0.969831 
+LODGING                           -7.033442  1737.880734     -0.004     0.996771 
+PLACE_OF_WORSHIP                   1.705988   211.550513     0.0081     0.993566 
+EDUCATION                          9.032919   459.656927     0.0197     0.984321 
+GOVERNMENT                        -6.994898   405.486219    -0.0173     0.986237 
+BUSINESS                          -8.827502  4849.423955    -0.0018     0.998548 
+FINANCE                           31.408324   600.964501     0.0523     0.958319 
+FACILITIES                        47.459189  2416.667974     0.0196     0.984332 
+CULTURE                            1.990557  1346.630936     0.0015     0.998821 
+place_density                       -0.0847     6.229681    -0.0136     0.989152 
 ```
 
 Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ### Model Statistics
 ```
-Deviance: 62.0407
+Deviance: 488.2863
 Null Deviance: 488.8982
-AIC: 104.0407
-BIC: 262.3989
-McFadden R²: 0.8731
+AIC: 526.2863
+BIC: 669.5628
+McFadden R²: 0.0013
 Number of observations: 13917.0
 ```
 
@@ -400,46 +376,43 @@ Number of observations: 13917.0
 
 ### Formula
 ```
-high_larceny_top50 ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + total_crime + total_places + street_length_meters + place_density
+high_larceny_top50 ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + place_density
 ```
 
 ### Coefficients
 ```
 Term                               Estimate    Std.Error    z value     Pr(>|z|)
 ────────────────────────────────────────────────────────────────────────────────
-(Intercept)                       -7.062756     0.338417     -20.87          0.0 ***
-SPORTS                            -1.912279   420.428872    -0.0045     0.996371 
-SHOPPING                            4.24331   428.362312     0.0099     0.992096 
-OTHER                               2.26072   425.455883     0.0053      0.99576 
-TRANSPORTATION                    -0.382568   420.609477    -0.0009     0.999274 
-AUTOMOTIVE                        -0.208934   420.749088    -0.0005     0.999604 
-SERVICES                          -0.431256   409.896923    -0.0011     0.999161 
-FOOD_DRINK                         1.222056   405.197794      0.003     0.997594 
-ENTERTAINMENT_RECREATION          -0.271602   422.311196    -0.0006     0.999487 
-HEALTH_WELLNESS                    2.201615   404.483576     0.0054     0.995657 
-LODGING                           -9.050242   637.250088    -0.0142     0.988669 
-PLACE_OF_WORSHIP                   3.635057   443.047419     0.0082     0.993454 
-EDUCATION                          5.076582    376.59187     0.0135     0.989245 
-GOVERNMENT                        -2.281621   389.913162    -0.0059     0.995331 
-BUSINESS                                0.0          NaN        NaN          NaN 
-FINANCE                             5.85428   452.122168     0.0129     0.989669 
-FACILITIES                        35.810756    839.14549     0.0427      0.96596 
-CULTURE                            8.214681   477.728326     0.0172     0.986281 
-total_crime                        0.206995      0.01176    17.6023          0.0 ***
-total_places                      -2.035358   412.082293    -0.0049     0.996059 
-street_length_meters              -0.006241     0.002217    -2.8152     0.004875 **
-place_density                      0.018501     1.029292      0.018     0.985659 
+(Intercept)                       -4.326044     0.075027   -57.6601          0.0 ***
+SPORTS                            -6.422207   116.781327     -0.055     0.956144 
+SHOPPING                           6.385236    85.917048     0.0743     0.940757 
+OTHER                             -0.036149    82.350504    -0.0004      0.99965 
+TRANSPORTATION                    -4.132117    47.572385    -0.0869     0.930783 
+AUTOMOTIVE                        -6.949102    96.677877    -0.0719     0.942698 
+SERVICES                          -4.579043    72.306616    -0.0633     0.949505 
+FOOD_DRINK                        -2.446764    56.710925    -0.0431     0.965586 
+ENTERTAINMENT_RECREATION          -5.800776    89.900269    -0.0645     0.948553 
+HEALTH_WELLNESS                   -4.286763    45.454563    -0.0943     0.924864 
+LODGING                           -7.116485   693.237773    -0.0103     0.991809 
+PLACE_OF_WORSHIP                    1.58733    97.841806     0.0162     0.987056 
+EDUCATION                          8.617659   198.639836     0.0434     0.965396 
+GOVERNMENT                         -6.54502   169.017882    -0.0387     0.969111 
+BUSINESS                          -6.456925  2110.407951    -0.0031     0.997559 
+FINANCE                           29.050594   239.002105     0.1215     0.903256 
+FACILITIES                        45.058067   954.466615     0.0472     0.962348 
+CULTURE                            2.336772   516.903426     0.0045     0.996393 
+place_density                     -0.076616     2.549833      -0.03     0.976029 
 ```
 
 Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ### Model Statistics
 ```
-Deviance: Inf
+Deviance: 1919.746
 Null Deviance: 1922.9092
-AIC: Inf
-BIC: Inf
-McFadden R²: -Inf
+AIC: 1957.746
+BIC: 2101.0224
+McFadden R²: 0.0016
 Number of observations: 13917.0
 ```
 
@@ -449,46 +422,43 @@ Number of observations: 13917.0
 
 ### Formula
 ```
-high_violence_jenks ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + total_crime + total_places + street_length_meters + place_density
+high_violence_jenks ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + place_density
 ```
 
 ### Coefficients
 ```
 Term                               Estimate    Std.Error    z value     Pr(>|z|)
 ────────────────────────────────────────────────────────────────────────────────
-(Intercept)                       -6.715834     0.237959   -28.2227          0.0 ***
-SPORTS                            -5.004602  1636.576319    -0.0031      0.99756 
-SHOPPING                           6.636456  1671.798415      0.004     0.996833 
-OTHER                               1.08257  1623.671384     0.0007     0.999468 
-TRANSPORTATION                    -2.975081  1642.323444    -0.0018     0.998555 
-AUTOMOTIVE                        -5.496431  1667.169256    -0.0033     0.997369 
-SERVICES                          -3.500183  1627.835387    -0.0022     0.998284 
-FOOD_DRINK                        -1.157757  1567.471905    -0.0007     0.999411 
-ENTERTAINMENT_RECREATION          -4.613976  1633.781363    -0.0028     0.997747 
-HEALTH_WELLNESS                   -3.171256  1614.195034     -0.002     0.998432 
-LODGING                           -1.119305  2249.005747    -0.0005     0.999603 
-PLACE_OF_WORSHIP                   1.903455  1707.893637     0.0011     0.999111 
-EDUCATION                          9.490676  1486.865983     0.0064     0.994907 
-GOVERNMENT                        -4.806926  1525.936907    -0.0032     0.997487 
-BUSINESS                                0.0          NaN        NaN          NaN 
-FINANCE                           26.818592  1801.048124     0.0149      0.98812 
-FACILITIES                        41.020891  2849.888998     0.0144     0.988516 
-CULTURE                           -0.158322  2165.174278    -0.0001     0.999942 
-total_crime                        0.021527     0.002109    10.2089          0.0 ***
-total_places                      -0.974544  1609.792286    -0.0006     0.999517 
-street_length_meters               0.000573     0.000336     1.7072     0.087784 .
-place_density                     -0.050932     8.003419    -0.0064     0.994923 
+(Intercept)                       -6.197898     0.189174   -32.7629          0.0 ***
+SPORTS                            -6.588198   323.015775    -0.0204     0.983728 
+SHOPPING                           6.615686   217.368692     0.0304      0.97572 
+OTHER                             -0.042725   228.737661    -0.0002     0.999851 
+TRANSPORTATION                    -4.230811   128.563949    -0.0329     0.973748 
+AUTOMOTIVE                         -7.09005   263.128876    -0.0269     0.978503 
+SERVICES                          -4.693832   201.416015    -0.0233     0.981408 
+FOOD_DRINK                        -2.555156   142.320411     -0.018     0.985676 
+ENTERTAINMENT_RECREATION          -5.931926   245.975591    -0.0241      0.98076 
+HEALTH_WELLNESS                   -4.403504   122.917779    -0.0358     0.971422 
+LODGING                           -7.327646  1886.408942    -0.0039     0.996901 
+PLACE_OF_WORSHIP                   1.701698   236.030183     0.0072     0.994248 
+EDUCATION                          8.731058   510.326336     0.0171      0.98635 
+GOVERNMENT                        -6.828234   427.939355     -0.016     0.987269 
+BUSINESS                          -7.956785  5396.727574    -0.0015     0.998824 
+FINANCE                           29.949581   632.935651     0.0473     0.962259 
+FACILITIES                        46.863575  2467.496523      0.019     0.984847 
+CULTURE                            2.393706  1427.808825     0.0017     0.998662 
+place_density                     -0.079607     6.810803    -0.0117     0.990674 
 ```
 
 Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ### Model Statistics
 ```
-Deviance: 313.5194
+Deviance: 403.1393
 Null Deviance: 403.6287
-AIC: 355.5194
-BIC: 513.8776
-McFadden R²: 0.2232
+AIC: 441.1393
+BIC: 584.4158
+McFadden R²: 0.0012
 Number of observations: 13917.0
 ```
 
@@ -498,46 +468,43 @@ Number of observations: 13917.0
 
 ### Formula
 ```
-high_violence_top25 ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + total_crime + total_places + street_length_meters + place_density
+high_violence_top25 ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + place_density
 ```
 
 ### Coefficients
 ```
 Term                               Estimate    Std.Error    z value     Pr(>|z|)
 ────────────────────────────────────────────────────────────────────────────────
-(Intercept)                        -4.99723     0.103039   -48.4982          0.0 ***
-SPORTS                             1.803667  2743.130385     0.0007     0.999475 
-SHOPPING                          15.417506  2811.048835     0.0055     0.995624 
-OTHER                              8.452141  2725.149077     0.0031     0.997525 
-TRANSPORTATION                     4.133429  2729.080561     0.0015     0.998792 
-AUTOMOTIVE                         1.188779  2797.455193     0.0004     0.999661 
-SERVICES                           3.727464  2673.915942     0.0014     0.998888 
-FOOD_DRINK                         5.860985  2649.711383     0.0022     0.998235 
-ENTERTAINMENT_RECREATION           2.347966  2670.110612     0.0009     0.999298 
-HEALTH_WELLNESS                    3.773146  2716.087002     0.0014     0.998892 
-LODGING                            1.758332  3555.931103     0.0005     0.999605 
-PLACE_OF_WORSHIP                  10.259883  2818.950358     0.0036     0.997096 
-EDUCATION                         17.462429  2510.164145      0.007     0.994449 
-GOVERNMENT                         1.504875  2527.069324     0.0006     0.999525 
-BUSINESS                                0.0          NaN        NaN          NaN 
-FINANCE                            39.92568  2597.276905     0.0154     0.987735 
-FACILITIES                         56.08222  3727.264966      0.015     0.987995 
-CULTURE                           10.240442  2212.904797     0.0046     0.996308 
-total_crime                        0.032374     0.002376    13.6247          0.0 ***
-total_places                      -8.525862  2715.389792    -0.0031     0.997495 
-street_length_meters               0.000596     0.000188     3.1646     0.001553 **
-place_density                     -0.083645     3.511189    -0.0238     0.980994 
+(Intercept)                        -4.55887     0.084061   -54.2329          0.0 ***
+SPORTS                            -6.960308   171.875417    -0.0405     0.967698 
+SHOPPING                           6.901804    75.933715     0.0909     0.927578 
+OTHER                             -0.051601    134.18528    -0.0004     0.999693 
+TRANSPORTATION                    -4.831871    79.922667    -0.0605     0.951792 
+AUTOMOTIVE                        -7.919249   137.374689    -0.0576      0.95403 
+SERVICES                           -5.38589   124.066724    -0.0434     0.965374 
+FOOD_DRINK                        -2.562341    46.137715    -0.0555     0.955711 
+ENTERTAINMENT_RECREATION          -6.667046   142.442613    -0.0468     0.962669 
+HEALTH_WELLNESS                   -5.120011    77.365199    -0.0662     0.947235 
+LODGING                           -3.812908  1094.503626    -0.0035      0.99722 
+PLACE_OF_WORSHIP                   1.241206    123.27893     0.0101     0.991967 
+EDUCATION                         10.453028   182.769144     0.0572     0.954392 
+GOVERNMENT                        -6.851762   160.342643    -0.0427     0.965915 
+BUSINESS                          -0.233037    970.84613    -0.0002     0.999808 
+FINANCE                           32.386657   411.176158     0.0788     0.937219 
+FACILITIES                        47.049771  1194.450746     0.0394     0.968579 
+CULTURE                           -0.201829   862.978576    -0.0002     0.999813 
+place_density                     -0.069181     5.306355     -0.013     0.989598 
 ```
 
 Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ### Model Statistics
 ```
-Deviance: 1323.1776
+Deviance: 1591.3297
 Null Deviance: 1593.8398
-AIC: 1365.1776
-BIC: 1523.5358
-McFadden R²: 0.1698
+AIC: 1629.3297
+BIC: 1772.6062
+McFadden R²: 0.0016
 Number of observations: 13917.0
 ```
 
@@ -547,46 +514,43 @@ Number of observations: 13917.0
 
 ### Formula
 ```
-high_violence_top50 ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + total_crime + total_places + street_length_meters + place_density
+high_violence_top50 ~ 1 + SPORTS + SHOPPING + OTHER + TRANSPORTATION + AUTOMOTIVE + SERVICES + FOOD_DRINK + ENTERTAINMENT_RECREATION + HEALTH_WELLNESS + LODGING + PLACE_OF_WORSHIP + EDUCATION + GOVERNMENT + BUSINESS + FINANCE + FACILITIES + CULTURE + place_density
 ```
 
 ### Coefficients
 ```
 Term                               Estimate    Std.Error    z value     Pr(>|z|)
 ────────────────────────────────────────────────────────────────────────────────
-(Intercept)                       -3.744145     0.058341    -64.177          0.0 ***
-SPORTS                            -6.301133    639.94474    -0.0098     0.992144 
-SHOPPING                           7.274293   655.100468     0.0111      0.99114 
-OTHER                              0.499871   635.774816     0.0008     0.999373 
-TRANSPORTATION                    -4.167742   642.287805    -0.0065     0.994823 
-AUTOMOTIVE                        -7.189579   652.019251     -0.011     0.991202 
-SERVICES                          -4.677032   636.898184    -0.0073     0.994141 
-FOOD_DRINK                        -1.996828   613.999201    -0.0033     0.997405 
-ENTERTAINMENT_RECREATION          -5.989126   638.724848    -0.0094     0.992519 
-HEALTH_WELLNESS                    -4.57954   632.278851    -0.0072     0.994221 
-LODGING                           -3.328356   838.982268     -0.004     0.996835 
-PLACE_OF_WORSHIP                   1.768627   668.006834     0.0026     0.997888 
-EDUCATION                         10.600736   582.031032     0.0182     0.985469 
-GOVERNMENT                        -6.157813   595.725499    -0.0103     0.991753 
-BUSINESS                                0.0          NaN        NaN          NaN 
-FINANCE                            32.26339   698.152669     0.0462     0.963141 
-FACILITIES                        46.393531  1077.069298     0.0431     0.965643 
-CULTURE                            0.342417   815.629462     0.0004     0.999665 
-total_crime                        0.098903     0.004405    22.4508          0.0 ***
-total_places                       -0.52225   630.785085    -0.0008     0.999339 
-street_length_meters               0.000587     0.000153     3.8448     0.000121 ***
-place_density                     -0.069995     2.691588     -0.026     0.979253 
+(Intercept)                       -3.082062     0.041578   -74.1278          0.0 ***
+SPORTS                            -7.543021   114.110328    -0.0661     0.947296 
+SHOPPING                           7.887519    75.424297     0.1046     0.916713 
+OTHER                             -0.188866    86.914782    -0.0022     0.998266 
+TRANSPORTATION                    -5.072114    46.423557    -0.1093     0.912998 
+AUTOMOTIVE                        -8.461685    93.226973    -0.0908      0.92768 
+SERVICES                          -5.527563    77.008176    -0.0718     0.942778 
+FOOD_DRINK                        -3.025365    48.988963    -0.0618     0.950757 
+ENTERTAINMENT_RECREATION           -6.99152    87.532989    -0.0799     0.936338 
+HEALTH_WELLNESS                   -5.471817    44.378626    -0.1233     0.901871 
+LODGING                           -8.959191   668.754748    -0.0134     0.989311 
+PLACE_OF_WORSHIP                   2.058483    81.555189     0.0252     0.979863 
+EDUCATION                         10.460322   177.179662      0.059     0.952922 
+GOVERNMENT                        -7.911167   148.230385    -0.0534     0.957437 
+BUSINESS                          -8.336915  1853.942741    -0.0045     0.996412 
+FINANCE                           36.638257   224.926074     0.1629     0.870605 
+FACILITIES                        53.699527   869.801869     0.0617     0.950772 
+CULTURE                            3.161319   512.230556     0.0062     0.995076 
+place_density                     -0.100177     2.354832    -0.0425     0.966067 
 ```
 
 Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ### Model Statistics
 ```
-Deviance: 3884.0879
+Deviance: 4966.629
 Null Deviance: 4977.4317
-AIC: 3926.0879
-BIC: 4084.4461
-McFadden R²: 0.2197
+AIC: 5004.629
+BIC: 5147.9055
+McFadden R²: 0.0022
 Number of observations: 13917.0
 ```
 

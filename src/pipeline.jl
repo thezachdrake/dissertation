@@ -81,6 +81,12 @@ function run_incidents()
     @info "Creating target variables..."
     incidents_targets = create_target_variables!(incidents_features)
 
+    # Save feature matrix with target variables included
+    features_dir = joinpath(OUTPUT_DIR, "features")
+    mkpath(features_dir)
+    CSV.write(joinpath(features_dir, "incidents_features.csv"), incidents_features)
+    @info "Saved feature matrix with targets to: $(features_dir)/incidents_features.csv"
+
     # Step 6: Modeling
     @info "\n[Step 6/6] Fitting logistic regression models..."
     fit_logistic_models(incidents_features, incidents_targets, "incidents")

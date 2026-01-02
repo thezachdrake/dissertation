@@ -65,13 +65,13 @@ function fit_logistic_models_counts(
 )::Dict{Symbol, Any}
     @info "Fitting logistic regression models for $(length(target_cols)) targets using COUNT features..."
 
-    # Identify predictor columns (counts only)
+    # Identify predictor columns (counts only + place_density control)
     predictor_cols = [
         col for col in names(features) if !startswith(String(col), "crime_") &&
         !startswith(String(col), "high_") &&
         !startswith(String(col), "interact_") &&
         !startswith(String(col), "PC_") &&
-        !in(col, [:street_id, :street_name, :total_crime, :total_places, :crime_place_ratio, :street_length_meters, :place_density])
+        !in(Symbol(col), [:street_id, :street_name, :total_crime, :total_places, :crime_place_ratio, :street_length_meters])
     ]
 
     @info "Candidate predictors: $(length(predictor_cols)) columns"
@@ -128,10 +128,11 @@ function fit_logistic_models_interactions(
 )::Dict{Symbol, Any}
     @info "Fitting logistic regression models for $(length(target_cols)) targets using INTERACTION features..."
 
-    # Identify predictor columns (interactions only)
-    predictor_cols = [
-        Symbol(col) for col in names(features) if startswith(String(col), "interact_")
-    ]
+    # Identify predictor columns (interactions + place_density control)
+    predictor_cols = vcat(
+        [:place_density],
+        [Symbol(col) for col in names(features) if startswith(String(col), "interact_")]
+    )
 
     @info "Candidate predictors: $(length(predictor_cols)) columns"
 
@@ -187,10 +188,11 @@ function fit_logistic_models_pca(
 )::Dict{Symbol, Any}
     @info "Fitting logistic regression models for $(length(target_cols)) targets using PCA features..."
 
-    # Identify predictor columns (PCA only)
-    predictor_cols = [
-        Symbol(col) for col in names(features) if startswith(String(col), "PC_")
-    ]
+    # Identify predictor columns (PCA + place_density control)
+    predictor_cols = vcat(
+        [:place_density],
+        [Symbol(col) for col in names(features) if startswith(String(col), "PC_")]
+    )
 
     @info "Candidate predictors: $(length(predictor_cols)) columns"
 

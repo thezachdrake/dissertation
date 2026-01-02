@@ -1,3 +1,0 @@
-term,mean_coefficient,std_coefficient,mean_p_value,min_p_value,n_significant_models,direction_consistency,effect_direction,importance_score
-total_crime,0.035205050147216164,0.018520667489313893,3.5302515992919726e-5,3.1482674504178775e-40,12,1.0,positive,1.0
-street_length_meters,-0.006216013269698204,0.009685616158933905,0.010880735503879562,0.0014039014553074393,2,0.5,negative,0.4992980492723463

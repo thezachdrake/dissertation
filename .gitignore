@@ -10,3 +10,4 @@ sources/
 .cl*
 flake.lock
 *.conform*
+docs/
